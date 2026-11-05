@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCI Vault | Admin Dashboard</title>
+
+    <!-- Bootstrap 5.3.3 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style/style.css">
+</head>
+
+<!-- Russian Nesting Doll Layout: Locks screen height and prevents double scrollbars -->
+
+<body class="admin-page admin-dashboard-page vh-100 overflow-hidden d-flex flex-column bg-light">
+
+    <!-- HEADER CONTAINER -->
+    <header
+        class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 bg-white border-bottom">
+        <div class="main-name d-flex align-items-center gap-2">
+            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
+            <span class="fw-bold fs-5 text-dark">DCI Vault <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+        </div>
+
+        <!-- Administrator Profile Section -->
+        <div class="user-profile d-flex align-items-center gap-2">
+            <div class="d-flex flex-column text-end lh-sm">
+                <!-- PHP INJECTION: Dynamically output admin name -->
+                <h4 id="adminNameDisplay" class="mb-0 fs-6 fw-bold text-dark">Administrator Name</h4>
+                <small id="adminPosDisplay" class="text-secondary">System Administrator</small>
+            </div>
+            <!-- PHP INJECTION: Dynamically output admin avatar -->
+            <img id="adminAvatarDisplay" src="assets/user.jpg" alt="Admin Avatar"
+                class="user-avatar rounded-circle object-fit-cover shadow-sm" width="40" height="40">
+        </div>
+    </header>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="d-flex flex-row flex-grow-1 overflow-hidden">
+
+        <!-- NAVIGATION PANEL (Admin Links) -->
+        <nav class="main-navigation admin-sidebar d-flex flex-column justify-content-between p-3 flex-shrink-0 text-white"
+            aria-label="Admin navigation"
+            style="width: 260px;">
+            <div class="d-flex flex-column gap-2">
+                <!-- Active Dashboard Link -->
+                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded active bg-warning text-dark fw-semibold"
+                    href="admin-dashboard.html">
+                    <i class="bi bi-speedometer2 fs-5"></i>Dashboard
+                </a>
+                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded" href="admin-sales.html">
+                    <i class="bi bi-graph-up-arrow fs-5"></i>Sales
+                </a>
+                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded" href="admin-prod.html">
+                    <i class="bi bi-tag fs-5"></i>Products
+                </a>
+                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded"
+                    href="admin-order.html">
+                    <i class="bi bi-bag-check fs-5"></i>Orders
+                </a>
+                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded"
+                    href="admin-users.html">
+                    <i class="bi bi-people fs-5"></i>Users
+                </a>
+            </div>
+
+            <div class="border-top border-secondary pt-3">
+                <a id="adminLogoutBtn" class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-danger rounded"
+                    href="logout.php" style="color: #dc3545 !important;">
+                    <i class="bi bi-box-arrow-right fs-5 text-danger"></i>Log Out
+                </a>
+            </div>
+        </nav>
+
+        <!-- DASHBOARD CONTENT PANEL (Scrollable Area) -->
+        <main class="main-control admin-main flex-grow-1 d-flex flex-column overflow-y-auto p-4">
+
+            <!-- Section Header -->
+            <div class="mb-4">
+                <span class="admin-eyebrow">STORE PERFORMANCE</span>
+                <h2 class="h3 fw-bold text-dark m-0">Dashboard Overview</h2>
+                <p class="text-secondary small m-0">Welcome back! Here is a summary of store performance.</p>
+            </div>
+
+            <!-- Top Metric Cards Row -->
+            <div class="row g-3 mb-4">
+                <!-- Total Sales Card -->
+                <div class="col-md-3">
+                    <a href="admin-sales.html" class="card admin-metric-card border-0 shadow-sm p-3 h-100 bg-white text-decoration-none text-reset"
+                        aria-label="View sales report">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-secondary small fw-semibold text-uppercase">Total Sales</span>
+                            <div class="p-2 rounded text-white"
+                                style="background-color: var(--contrast-primary, #2563EB);">
+                                <i class="bi bi-coin fs-5"></i>
+                            </div>
+                        </div>
+                        <!-- PHP / JS TARGET -->
+                        <h3 id="metricTotalSales" class="fw-bold text-dark mb-0">₱24,580.00</h3>
+                        <small class="text-success mt-1 fw-semibold"><i class="bi bi-arrow-up-short"></i> +12% from
+                            yesterday</small>
+                    </a>
+                </div>
+
+                <!-- Total Orders Card -->
+                <div class="col-md-3">
+                    <a href="admin-order.html" class="card admin-metric-card border-0 shadow-sm p-3 h-100 bg-white text-decoration-none text-reset"
+                        aria-label="View all orders">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-secondary small fw-semibold text-uppercase">Total Orders</span>
+                            <div class="p-2 rounded text-white"
+                                style="background-color: var(--primary-color, #0F172A);">
+                                <i class="bi bi-bag-check fs-5"></i>
+                            </div>
+                        </div>
+                        <!-- PHP / JS TARGET -->
+                        <h3 id="metricTotalOrders" class="fw-bold text-dark mb-0">48</h3>
+                        <small class="text-secondary mt-1">6 pending processing</small>
+                    </a>
+                </div>
+
+                <!-- Total Products Card -->
+                <div class="col-md-3">
+                    <a href="admin-prod.html" class="card admin-metric-card border-0 shadow-sm p-3 h-100 bg-white text-decoration-none text-reset"
+                        aria-label="Manage products">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-secondary small fw-semibold text-uppercase">Active Products</span>
+                            <div class="bg-success bg-opacity-10 p-2 rounded text-success">
+                                <i class="bi bi-tag fs-5"></i>
+                            </div>
+                        </div>
+                        <!-- PHP / JS TARGET -->
+                        <h3 id="metricTotalProducts" class="fw-bold text-dark mb-0">32</h3>
+                        <small class="text-secondary mt-1">Across 4 categories</small>
+                    </a>
+                </div>
+
+                <!-- Registered Users Card -->
+                <div class="col-md-3">
+                    <a href="admin-users.html" class="card admin-metric-card border-0 shadow-sm p-3 h-100 bg-white text-decoration-none text-reset"
+                        aria-label="Manage user accounts">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="text-secondary small fw-semibold text-uppercase">Total Users</span>
+                            <div class="bg-info bg-opacity-10 p-2 rounded text-info">
+                                <i class="bi bi-people fs-5"></i>
+                            </div>
+                        </div>
+                        <!-- PHP / JS TARGET -->
+                        <h3 id="metricTotalUsers" class="fw-bold text-dark mb-0">15</h3>
+                        <small class="text-secondary mt-1">2 Admin, 13 Cashiers/Customers</small>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="row g-4 flex-grow-1">
+
+                <!-- Left: Recent Orders Table -->
+                <div class="col-12 d-flex flex-column">
+                    <div class="card border-0 shadow-sm flex-grow-1 overflow-hidden bg-white"
+                        style="border-radius: var(--prod-rd, 0.75rem);">
+                        <div
+                            class="card-header bg-white border-bottom px-4 py-3 d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
+                            <h5 class="fw-bold m-0 fs-6 text-dark">Recent Customer Orders</h5>
+                            <div class="d-flex flex-column flex-sm-row flex-sm-wrap align-items-sm-center gap-2">
+                                <label class="visually-hidden" for="recentOrdersSearch">Search recent orders</label>
+                                <input id="recentOrdersSearch" class="form-control form-control-sm"
+                                    type="search" placeholder="Search order or customer" style="min-width: 220px;">
+                                <label class="visually-hidden" for="recentOrdersStatus">Filter by order status</label>
+                                <select id="recentOrdersStatus" class="form-select form-select-sm">
+                                    <option value="">All statuses</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                                <span id="recentOrdersCount" class="small text-secondary text-nowrap"
+                                    aria-live="polite"></span>
+                                <a href="admin-order.html" class="text-decoration-none small fw-semibold text-nowrap"
+                                    style="color: var(--contrast-primary, #2563EB);">View All</a>
+                            </div>
+                        </div>
+                        <div class="table-responsive flex-grow-1 m-0">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light text-secondary small text-uppercase">
+                                    <tr>
+                                        <th class="ps-4">Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th class="text-end pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentOrdersTableBody">
+                                    <!-- PHP injection example: render each recent order row here. -->
+                                    <!-- Static Prototype Row -->
+                                    <tr>
+                                        <td class="ps-4 fw-semibold text-dark">#ORD-2026-048</td>
+                                        <td class="text-dark">John Doe</td>
+                                        <td class="fw-semibold" style="color: var(--contrast-primary, #2563EB);">₱590.00
+                                        </td>
+                                        <td><span
+                                                class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill">Processing</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a href="admin-order.html"
+                                                class="btn btn-sm btn-outline-dark fw-semibold px-3">Review</a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="ps-4 fw-semibold text-dark">#ORD-2026-047</td>
+                                        <td class="text-dark">Jane Smith</td>
+                                        <td class="fw-semibold" style="color: var(--contrast-primary, #2563EB);">
+                                            ₱1,262.00</td>
+                                        <td><span
+                                                class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-1 rounded-pill">Completed</span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a href="admin-order.html"
+                                                class="btn btn-sm btn-outline-dark fw-semibold px-3">Review</a>
+                                        </td>
+                                    </tr>
+                                    <tr id="recentOrdersEmptyState" class="d-none">
+                                        <td colspan="5" class="text-center text-secondary py-4">
+                                            No recent orders match your filters.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom JavaScript file -->
+    <script src="backend/admin.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
