@@ -109,7 +109,9 @@ if (isset($_POST['logIn'])) {
         $_SESSION['position'] = $row['position'] ?? null;
 
         session_write_close();
-        header("Location: cstmr-prod.php");
+        header(($row['position'] ?? null) == 2
+            ? "Location: admin-users.html"
+            : "Location: cstmr-prod.php");
         exit();
     }
 
