@@ -446,7 +446,7 @@ $escape = function ($value) {
     </div>
 
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=session-history"></script>
+    <script src="backend/cstmr.js?v=vat-inclusive"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

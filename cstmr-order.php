@@ -131,7 +131,7 @@
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3">
                         <div>
                             <small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">GCash</span></small>
-                            <div class="h6 fw-bold mb-0 mt-1" style="color: var(--contrast-primary, #2563EB);">Total Amount: P590.00</div>
+                            <div class="h6 fw-bold mb-0 mt-1" style="color: var(--contrast-primary, #2563EB);">Total Amount: P530.00</div>
                         </div>
                         <div class="d-flex gap-2">
                             <button class="view-order-btn btn text-white btn-sm px-3 shadow-sm fw-semibold" 
@@ -141,9 +141,9 @@
                                 data-order-status="Processing"
                                 data-order-payment="GCash"
                                 data-order-subtotal="P500.00"
-                                data-order-vat="P60.00"
+                                data-order-vat="P53.58"
                                 data-order-shipping="P30.00"
-                                data-order-total="P590.00">
+                                data-order-total="P530.00">
                                 View Details
                             </button>
                         </div>
@@ -220,8 +220,8 @@
                                 <span id="modalSubtotal" class="fw-semibold text-dark">P500.00</span>
                             </div>
                             <div class="d-flex justify-content-between text-secondary small">
-                                <span>VAT Amount (12%)</span>
-                                <span id="modalVat" class="fw-semibold text-dark">P60.00</span>
+                                <span>VAT included in prices</span>
+                                <span id="modalVat" class="fw-semibold text-dark">P53.58</span>
                             </div>
                             <div class="d-flex justify-content-between text-secondary small">
                                 <span>Shipping Fee</span>
@@ -230,7 +230,7 @@
                             <hr class="text-secondary opacity-25 my-1">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold text-dark">Total Amount</span>
-                                <span id="modalTotal" class="fw-bold fs-5" style="color: var(--contrast-primary, #2563EB);">P590.00</span>
+                                <span id="modalTotal" class="fw-bold fs-5" style="color: var(--contrast-primary, #2563EB);">P530.00</span>
                             </div>
                         </div>
                     </div>
@@ -247,7 +247,7 @@
     </div>
 
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=session-history"></script>
+    <script src="backend/cstmr.js?v=vat-inclusive"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -94,7 +94,7 @@ $welcomeMessage = $customerName !== ''
                 <div>
                     <span class="customer-eyebrow">YOUR NEXT FAVORITE</span>
                     <h2 class="h3 fw-bold text-dark m-0">Product Catalog</h2>
-                    <p class="customer-page-intro mb-0 mt-1">Explore everyday essentials and find something you love.</p>
+                    <p class="customer-page-intro mb-0 mt-1">Explore everyday essentials and find something you love. Prices include 12% VAT.</p>
                 </div>
 
                 <ul class="nav nav-pills flex-nowrap gap-1 p-1 bg-white customer-filter" id="categoryFilter" role="tablist" aria-label="Filter products by category">
@@ -221,6 +221,6 @@ $welcomeMessage = $customerName !== ''
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/cstmr.js?v=session-history"></script>
+    <script src="backend/cstmr.js?v=vat-inclusive"></script>
 </body>
 </html>

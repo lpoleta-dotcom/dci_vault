@@ -13,7 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
         currency: 'PHP',
         minimumFractionDigits: 2
     });
-    const calculateVat = subtotal => Math.round((Number(subtotal) + Number.EPSILON) * 12) / 100;
+    const calculateVat = inclusivePrice => Math.round((Number(inclusivePrice) * 12 / 112 + Number.EPSILON) * 100) / 100;
+    const calculateCartVat = items => items.reduce((sum, item) =>
+        sum + calculateVat(item.price) * Number(item.quantity || 0), 0);
+    const normalizeCart = items => items.map(item => {
+        if (item.vatIncluded) return { ...item, price: Math.round((Number(item.price) / 1.12 + Number.EPSILON) * 100) / 100, vatIncluded: false };
+        return { ...item, vatIncluded: false };
+    });
     const read = key => {
         const value = localStorage.getItem(key);
         return value ? JSON.parse(value) : null;
@@ -81,6 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
         const filters = Array.from(document.querySelectorAll('#categoryFilter [data-category]'));
         const cards = Array.from(grid.querySelectorAll('.product-card'));
+        cards.forEach(card => {
+            const basePrice = Number(card.dataset.price || 0);
+            const priceElement = card.querySelector('.productPrice');
+            if (priceElement) priceElement.textContent = money(basePrice);
+        });
         filters.forEach(button => button.addEventListener('click', () => {
             const category = button.dataset.category || 'all';
             filters.forEach(filter => {
@@ -106,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: card.dataset.productId || card.dataset.name,
                 name: card.dataset.name || card.querySelector('.productName')?.textContent.trim() || 'Product',
                 price: Number(card.dataset.price || card.querySelector('.productPrice')?.textContent.replace(/[^\d.]/g, '') || 0),
+                vatIncluded: false,
                 description: card.dataset.description || 'A quality DCI Vault favorite, designed for everyday use.',
                 image: card.dataset.imgFront || card.querySelector('img')?.getAttribute('src') || 'assets/product.jpg',
                 backImage: card.dataset.imgBack || card.dataset.imgFront || card.querySelector('img')?.getAttribute('src') || 'assets/product.jpg',
@@ -149,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             quantityInput.setCustomValidity('');
             let cart = read(keys.cart);
             if (!Array.isArray(cart)) cart = [];
+            cart = normalizeCart(cart);
             const size = sizeSelect.value || selectedProduct.sizes[0] || 'One Size';
             const existing = cart.find(item => String(item.id) === String(selectedProduct.id) && item.size === size);
             if (existing) existing.quantity += quantity;
@@ -164,17 +177,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getInitialCart() {
         const saved = read(keys.cart);
-        if (Array.isArray(saved)) return saved;
+        if (Array.isArray(saved)) {
+            const normalized = normalizeCart(saved);
+            write(keys.cart, normalized);
+            return normalized;
+        }
         const rows = Array.from(document.querySelectorAll('#cartTableBody tr[data-product-id]'));
         const initial = rows.map(row => {
             const cells = row.querySelectorAll('td');
-            const price = Number(cells[2]?.textContent.replace(/[^\d.]/g, '') || 0);
+            const price = Number(row.dataset.basePrice || cells[2]?.textContent.replace(/[^\d.]/g, '') || 0);
             return {
                 id: row.dataset.productId,
                 name: cells[0]?.querySelector('.fw-semibold')?.textContent.trim() || 'Product',
                 id: row.dataset.productId,
                 size: cells[1]?.textContent.trim() || 'One Size',
                 price,
+                vatIncluded: false,
                 quantity: Math.max(1, Number(cells[3]?.querySelector('input')?.value) || 1),
                 image: 'assets/product.jpg'
             };
@@ -187,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = document.getElementById('cartTableBody');
         if (!body) return;
         let cart = getInitialCart();
-        const shippingFee = 30;
+            const shippingFee = 30;
         const render = () => {
             body.replaceChildren();
             cart.forEach((item, index) => {
@@ -206,11 +224,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.append(row);
             }
             const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
-            const vat = calculateVat(subtotal);
+            const vat = calculateCartVat(cart);
             document.getElementById('summarySubtotal').textContent = money(subtotal);
             document.getElementById('summaryVat').textContent = money(vat);
             document.getElementById('summaryShip').textContent = money(cart.length ? shippingFee : 0);
-            document.getElementById('summaryTotal').textContent = money(subtotal + vat + (cart.length ? shippingFee : 0));
+            document.getElementById('summaryTotal').textContent = money(subtotal + (cart.length ? shippingFee : 0));
             const emptyButton = document.getElementById('clearCartBtn');
             const orderButton = document.getElementById('placeOrderBtn');
             if (emptyButton) emptyButton.disabled = cart.length === 0;
@@ -278,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmButton.innerHTML = '<i class="bi bi-bag-check me-1"></i>Confirm &amp; Place Order';
 
                 const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                const vat = calculateVat(subtotal);
+                const vat = calculateCartVat(cart);
                 const shipping = shippingFee;
                 const paymentSelect = document.getElementById('paymentMethod');
                 const itemsContainer = document.getElementById('checkoutItems');
@@ -293,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('checkoutSubtotal').textContent = money(subtotal);
                 document.getElementById('checkoutVat').textContent = money(vat);
                 document.getElementById('checkoutShipping').textContent = money(shipping);
-                document.getElementById('checkoutTotal').textContent = money(subtotal + vat + shipping);
+                document.getElementById('checkoutTotal').textContent = money(subtotal + shipping);
                 pendingOrder = {
                     id: `ORD-${Date.now()}`,
                     date: new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }),
@@ -302,23 +320,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     subtotal,
                     vat,
                     shipping,
-                    total: subtotal + vat + shipping,
+                    total: subtotal + shipping,
                     items: cart.map(item => ({ ...item }))
                 };
                 confirmationModal.show();
             });
-            confirmButton.addEventListener('click', () => {
+            confirmButton.addEventListener('click', async () => {
                 if (!pendingOrder || !cart.length) {
                     notify('Your cart changed. Review the current cart before placing the order.');
                     confirmationModal.hide();
                     return;
                 }
-                const orders = read(keys.orders);
+                confirmButton.disabled = true;
+                confirmButton.textContent = 'Saving order…';
                 try {
-                    write(keys.orders, [...(Array.isArray(orders) ? orders : []), pendingOrder]);
+                    const response = await fetch('checkout-order.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            payment_method: document.getElementById('paymentMethod')?.value || 'gcash',
+                            items: cart.map(item => ({ id: item.id, size: item.size, quantity: item.quantity }))
+                        })
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error(result.message || 'The order could not be saved.');
+                    pendingOrder = result.order;
                 } catch (error) {
-                    console.error('Unable to save the prototype order in browser storage.', error);
-                    notify('The order could not be saved in this browser. Your cart is unchanged.');
+                    console.error('Unable to save order to the database.', error);
+                    notify(error.message || 'The order could not be saved. Your cart is unchanged.');
+                    confirmButton.disabled = false;
+                    confirmButton.innerHTML = '<i class="bi bi-bag-check me-1"></i>Confirm &amp; Place Order';
                     return;
                 }
                 document.getElementById('checkoutOrderId').textContent = pendingOrder.id;
@@ -345,9 +376,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? order.items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0)
                 : 0;
             const subtotal = Number(order.subtotal) || itemSubtotal;
-            const vat = calculateVat(subtotal);
-            const shipping = 30;
-            return { ...order, subtotal, vat, shipping, total: subtotal + vat + shipping };
+            const vat = Number(order.vat) || calculateCartVat(order.items || []);
+            const shipping = order.shipping === undefined ? 30 : Number(order.shipping);
+            return { ...order, subtotal, vat, shipping, total: subtotal + shipping };
         }) : [];
         const statusClass = status => {
             const normalized = String(status).toLowerCase();
@@ -386,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     status: button.dataset.orderStatus || 'Processing',
                     payment: button.dataset.orderPayment || 'GCash',
                     subtotal: Number((button.dataset.orderSubtotal || '').replace(/[^\d.]/g, '')) || 0,
-                    shipping: 30,
+                    shipping: Number((button.dataset.orderShipping || '').replace(/[^\d.]/g, '')) || 30,
                     items: [{
                         name: text?.querySelector('h6')?.textContent.trim() || 'Classic T-Shirt',
                         size: (text?.querySelector('small')?.textContent.match(/Size:\s*([^|]+)/) || [,'M'])[1].trim(),
@@ -394,8 +425,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         price: 250
                     }]
                 };
-                order.vat = calculateVat(order.subtotal);
-                order.total = order.subtotal + order.vat + order.shipping;
+                order.vat = Number((button.dataset.orderVat || '').replace(/[^\d.]/g, '')) || calculateCartVat(order.items);
+                order.total = order.subtotal + order.shipping;
             }
             document.getElementById('modalOrderId').textContent = `#${String(order.id).startsWith('ORD-') ? order.id : `ORD-2026-${String(order.id).padStart(3, '0')}`}`;
             document.getElementById('modalOrderDate').textContent = order.date;
@@ -404,9 +435,9 @@ document.addEventListener('DOMContentLoaded', () => {
             status.className = `badge ${statusClass(order.status)} border rounded-pill px-3`;
             document.getElementById('modalOrderPayment').textContent = order.payment;
             document.getElementById('modalSubtotal').textContent = money(order.subtotal);
-            document.getElementById('modalVat').textContent = money(order.vat ?? calculateVat(order.subtotal));
+            document.getElementById('modalVat').textContent = money(order.vat ?? calculateCartVat(order.items || []));
             document.getElementById('modalShipping').textContent = money(order.shipping);
-            document.getElementById('modalTotal').textContent = money(order.subtotal + (order.vat ?? calculateVat(order.subtotal)) + order.shipping);
+            document.getElementById('modalTotal').textContent = money(order.subtotal + order.shipping);
             const table = document.getElementById('modalItemsTableBody');
             table.replaceChildren();
             (order.items || []).forEach(item => {
@@ -424,6 +455,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.classList.toggle('d-none', filter !== 'all' && status !== filter);
             });
         }));
+        fetch('customer-orders-api.php', { cache: 'no-store' })
+            .then(async response => {
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load orders.');
+                return result.orders || [];
+            })
+            .then(serverOrders => {
+                list.replaceChildren();
+                if (!serverOrders.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'card border-0 shadow-sm p-4 text-center text-secondary';
+                    empty.textContent = 'You have no orders yet.';
+                    list.append(empty);
+                    return;
+                }
+                serverOrders.forEach(order => {
+                    const preview = order.items?.[0];
+                    const card = document.createElement('article');
+                    card.className = 'card border-0 shadow-sm p-4 bg-white';
+                    card.dataset.status = order.status;
+                    const itemSubtotal = (order.items || []).reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+                    const paymentLabels = { gcash: 'GCash / Digital Wallet', card: 'Credit / Debit Card', cod: 'Cash on Delivery / Pickup' };
+                    card.innerHTML = `<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
+                        <div><span class="fw-bold text-dark">Order #${escapeHtml(order.id)}</span><span class="text-muted small ms-2">Placed on ${escapeHtml(order.date)}</span></div>
+                        <span class="badge ${statusClass(order.status)} border px-3 py-2 rounded-pill">${escapeHtml(order.status)}</span></div>
+                        ${preview ? `<div class="d-flex align-items-center gap-3 mb-3"><img src="${escapeHtml(preview.image || 'assets/product.jpg')}" alt="" class="rounded object-fit-cover" style="width:65px;height:65px"><div class="flex-grow-1"><h6 class="mb-0 fw-semibold">${escapeHtml(preview.name)}</h6><small class="text-muted">Size: ${escapeHtml(preview.size)} | Qty: ${Number(preview.quantity)}</small></div><strong>${money(preview.price * preview.quantity)}</strong></div>` : ''}
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3"><div><small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">${escapeHtml(paymentLabels[order.payment] || order.payment)}</span></small><div class="h6 fw-bold mb-0 mt-1">Total Amount: ${money(order.total || (itemSubtotal + order.vat + order.shipping))}</div></div><button type="button" class="view-order-btn btn btn-dark btn-sm px-3">View Details</button></div>`;
+                    card.querySelector('.view-order-btn').dataset.order = JSON.stringify(order);
+                    list.append(card);
+                });
+                const activeFilter = filters.find(button => button.classList.contains('active'));
+                if (activeFilter && activeFilter.id !== 'all-tab') {
+                    const filter = activeFilter.textContent.trim().toLowerCase();
+                    Array.from(list.children).forEach(card => card.classList.toggle('d-none', card.dataset.status.toLowerCase() !== filter));
+                }
+            })
+            .catch(error => console.error('Unable to load customer orders from the database.', error));
     }
 
     function setupAccount() {

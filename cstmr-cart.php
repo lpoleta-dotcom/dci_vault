@@ -106,7 +106,7 @@
                                     */ 
                                     ?> -->
                                     <!-- Static prototype row (Will be managed by JS/PHP) -->
-                                    <tr data-product-id="1">
+                                    <tr data-product-id="1" data-base-price="250.00">
                                         <td class="ps-4">
                                             <div class="fw-semibold">Classic T-Shirt</div>
                                             <small class="text-muted">Product ID: 1</small>
@@ -145,8 +145,8 @@
                                 <span id="summarySubtotal" class="fw-semibold text-dark">P250.00</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2 text-secondary">
-                                <span>VAT Amount (12%)</span>
-                                <span id="summaryVat" class="fw-semibold text-dark">P30.00</span>
+                                <span>VAT included in prices</span>
+                                <span id="summaryVat" class="fw-semibold text-dark">P26.79</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2 text-secondary">
                                 <span>Shipping Fee</span>
@@ -157,7 +157,7 @@
                             <div class="d-flex justify-content-between mb-4">
                                 <span class="h5 fw-bold text-dark m-0">Total Due</span>
                                 <!-- JS TARGET: Updated dynamically -->
-                                <span id="summaryTotal" class="h4 fw-bold text-primary m-0">P310.00</span>
+                                <span id="summaryTotal" class="h4 fw-bold text-primary m-0">P280.00</span>
                             </div>
 
                             <!-- Payment Method Selector -->
@@ -207,7 +207,7 @@
                                 <span id="checkoutSubtotal" class="fw-semibold"></span>
                             </div>
                             <div class="d-flex justify-content-between gap-3 small mb-2">
-                                <span class="text-secondary">VAT Amount (12%)</span>
+                                <span class="text-secondary">VAT included in prices</span>
                                 <span id="checkoutVat" class="fw-semibold"></span>
                             </div>
                             <div class="d-flex justify-content-between gap-3 small mb-3">
@@ -219,7 +219,7 @@
                                 <span id="checkoutTotal" class="fw-bold fs-5 text-primary"></span>
                             </div>
                         </div>
-                        <p class="text-secondary small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Your order will be saved in this browser until server checkout is connected.</p>
+                        <p class="text-secondary small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Your order is saved to your account when you confirm checkout.</p>
                     </div>
                     <div id="checkoutSuccess" class="text-center py-4 d-none">
                         <div class="checkout-success-icon mx-auto mb-3"><i class="bi bi-check-lg"></i></div>
@@ -243,7 +243,7 @@
         </div>
     </div>
 
-    <script src="backend/cstmr.js?v=session-history"></script>
+    <script src="backend/cstmr.js?v=vat-inclusive"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
