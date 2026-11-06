@@ -66,77 +66,116 @@ document.addEventListener('DOMContentLoaded', function () {
             updateUserList();
         });
 
-        createAccountForm.addEventListener('submit', function (event) {
+        createAccountForm.addEventListener('submit', async function (event) {
             event.preventDefault();
             const formData = new FormData(createAccountForm);
             const usernameInput = createAccountForm.elements.username;
             const username = String(formData.get('username')).trim();
+            const errorMessage = document.getElementById('createAccountError');
+            const submitButton = document.getElementById('createAccountSubmit');
             const usernameExists = Array.from(usersTableBody.querySelectorAll('tr[data-user-id]'))
                 .some(row => row.children[1].textContent.trim().toLocaleLowerCase() === username.toLocaleLowerCase());
 
             usernameInput.setCustomValidity(usernameExists ? 'This username is already in use.' : '');
+            errorMessage.textContent = '';
             if (!createAccountForm.reportValidity()) return;
 
-            const role = String(formData.get('role'));
-            const row = document.createElement('tr');
-            row.dataset.userId = String(nextUserId++);
-            row.dataset.role = role;
+            if (formData.get('password') !== formData.get('confirm_password')) {
+                createAccountForm.elements.confirm_password.setCustomValidity('Passwords do not match.');
+                createAccountForm.reportValidity();
+                return;
+            }
 
-            const values = [
-                String(formData.get('name')).trim(),
-                username,
-                String(formData.get('phone')).trim(),
-                String(formData.get('street')).trim(),
-                String(formData.get('barangay')).trim(),
-                String(formData.get('city')).trim(),
-                String(formData.get('province')).trim(),
-                String(formData.get('postal')).trim()
-            ];
+            submitButton.disabled = true;
+            try {
+                const response = await fetch('admin-create-account.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.fromEntries(formData.entries()))
+                });
+                const result = await response.json();
+                if (!response.ok) {
+                    if (result.field === 'username') {
+                        usernameInput.setCustomValidity(result.message);
+                        usernameInput.reportValidity();
+                    } else {
+                        errorMessage.textContent = result.message || 'Unable to create the account.';
+                    }
+                    return;
+                }
 
-            values.forEach((value, index) => {
-                const cell = document.createElement('td');
-                cell.textContent = value;
-                if (index === 0) cell.classList.add('ps-4', 'fw-semibold');
-                row.append(cell);
-            });
+                const role = String(result.account.role);
+                const row = document.createElement('tr');
+                row.dataset.userId = String(result.account.id || nextUserId++);
+                row.dataset.role = role;
 
-            const roleCell = document.createElement('td');
-            const roleSelect = document.createElement('select');
-            roleSelect.className = 'form-select form-select-sm shadow-none role-select';
-            roleSelect.dataset.userId = row.dataset.userId;
-            Object.entries(roleNames).forEach(([value, name]) => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = name;
-                option.selected = value === role;
-                roleSelect.append(option);
-            });
-            roleCell.append(roleSelect);
-            row.append(roleCell);
+                const values = [
+                    [result.account.first_name, result.account.middle_name, result.account.last_name].filter(Boolean).join(' '),
+                    result.account.username,
+                    result.account.phone,
+                    result.account.street,
+                    result.account.barangay,
+                    result.account.city,
+                    result.account.province,
+                    result.account.postal
+                ];
 
-            const actionsCell = document.createElement('td');
-            actionsCell.className = 'text-end pe-4';
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.className = 'btn btn-sm btn-outline-danger delete-user-btn';
-            deleteButton.dataset.userId = row.dataset.userId;
-            deleteButton.setAttribute('aria-label', `Delete ${values[0]}`);
-            const deleteIcon = document.createElement('i');
-            deleteIcon.className = 'bi bi-trash';
-            deleteIcon.setAttribute('aria-hidden', 'true');
-            deleteButton.append(deleteIcon);
-            actionsCell.append(deleteButton);
-            row.append(actionsCell);
+                values.forEach((value, index) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    if (index === 0) cell.classList.add('ps-4', 'fw-semibold');
+                    row.append(cell);
+                });
 
-            usersTableBody.insertBefore(row, emptyUsersRow);
-            createAccountForm.reset();
-            usernameInput.setCustomValidity('');
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('createAccountModal')).hide();
-            updateUserList();
+                const roleCell = document.createElement('td');
+                const roleSelect = document.createElement('select');
+                roleSelect.className = 'form-select form-select-sm shadow-none role-select';
+                roleSelect.dataset.userId = row.dataset.userId;
+                Object.entries(roleNames).forEach(([value, name]) => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = name;
+                    option.selected = value === role;
+                    roleSelect.append(option);
+                });
+                roleCell.append(roleSelect);
+                row.append(roleCell);
+
+                const actionsCell = document.createElement('td');
+                actionsCell.className = 'text-end pe-4';
+                const deleteButton = document.createElement('button');
+                deleteButton.type = 'button';
+                deleteButton.className = 'btn btn-sm btn-outline-danger delete-user-btn';
+                deleteButton.dataset.userId = row.dataset.userId;
+                deleteButton.setAttribute('aria-label', `Delete ${values[0]}`);
+                const deleteIcon = document.createElement('i');
+                deleteIcon.className = 'bi bi-trash';
+                deleteIcon.setAttribute('aria-hidden', 'true');
+                deleteButton.append(deleteIcon);
+                actionsCell.append(deleteButton);
+                row.append(actionsCell);
+
+                usersTableBody.insertBefore(row, emptyUsersRow);
+                createAccountForm.reset();
+                usernameInput.setCustomValidity('');
+                createAccountForm.elements.confirm_password.setCustomValidity('');
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('createAccountModal')).hide();
+                updateUserList();
+            } catch (error) {
+                errorMessage.textContent = 'Account creation failed. Check your connection and try again.';
+            } finally {
+                submitButton.disabled = false;
+            }
         });
 
         createAccountForm.elements.username.addEventListener('input', function () {
             this.setCustomValidity('');
+        });
+        createAccountForm.elements.confirm_password.addEventListener('input', function () {
+            this.setCustomValidity('');
+        });
+        createAccountForm.elements.password.addEventListener('input', function () {
+            createAccountForm.elements.confirm_password.setCustomValidity('');
         });
 
         updateUserList();
