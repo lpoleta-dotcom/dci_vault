@@ -19,7 +19,7 @@ unset($_SESSION['signup_error']);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-3">
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -446,7 +446,7 @@ unset($_SESSION['signup_error']);
         </div>
 
         <script src="backend/app.js"></script>
-    <script src="backend/theme.js?v=3"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 
 </html>

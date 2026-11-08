@@ -1867,3 +1867,186 @@ body {
         transform: none !important;
     }
 }
+
+/* Active theme overrides must stay after all page styles above. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --page-color: #0B1220;
+    --surface-color: #111B2D;
+    --raised-color: #172338;
+    --text-color: #E5EDF8;
+    --muted-color: #A3B1C6;
+    --border-color: #2B3A52;
+    --field-color: #0D1728;
+    --table-head-color: #1B2940;
+    --customer-ink: #E5EDF8;
+    --customer-muted: #A3B1C6;
+    --customer-line: #2B3A52;
+    --admin-ink: #E5EDF8;
+    --admin-muted: #A3B1C6;
+    --admin-line: #2B3A52;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] body.customer-page,
+:root[data-theme="dark"] body.admin-page,
+:root[data-theme="dark"] body.landing-page,
+:root[data-theme="dark"] body.auth-page,
+:root[data-theme="dark"] .customer-page,
+:root[data-theme="dark"] .admin-page {
+    color: var(--text-color) !important;
+    background: var(--page-color) !important;
+}
+
+:root[data-theme="dark"] .customer-page .main-control.customer-main,
+:root[data-theme="dark"] .admin-page .admin-main {
+    color: var(--text-color) !important;
+    background: radial-gradient(ellipse at 92% 8%, rgba(59, 130, 246, 0.08), transparent 30rem), var(--page-color) !important;
+}
+
+:root[data-theme="dark"] .customer-page :is(.main-header, .customer-card, .customer-order-summary, .productBox, .customer-filter, .modal-content, .checkout-summary),
+:root[data-theme="dark"] .admin-page :is(.main-header, .card, .modal-content),
+:root[data-theme="dark"] :is(.bg-white, .dropdown-menu, .list-group-item, .login-form-panel, .login-showcase, .signup-form-panel, .auth-card) {
+    color: var(--text-color) !important;
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] :is(.text-dark, .text-body, .text-black),
+:root[data-theme="dark"] .customer-page .form-label,
+:root[data-theme="dark"] .customer-page .customer-main h2,
+:root[data-theme="dark"] .admin-page .admin-main h2 {
+    color: var(--text-color) !important;
+}
+
+:root[data-theme="dark"] :is(.text-secondary, .text-muted, .customer-page-intro) {
+    color: var(--muted-color) !important;
+}
+
+:root[data-theme="dark"] .customer-page :is(.form-control, .form-select),
+:root[data-theme="dark"] .admin-page .admin-main :is(.form-control, .form-select),
+:root[data-theme="dark"] .auth-page :is(.form-control, .form-select),
+:root[data-theme="dark"] .input-group-text {
+    color: var(--text-color) !important;
+    background-color: var(--field-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .customer-page :is(.table, .table thead th),
+:root[data-theme="dark"] .admin-page .admin-main :is(.table, .table thead th) {
+    --bs-table-color: var(--text-color);
+    --bs-table-bg: var(--surface-color);
+    --bs-table-border-color: var(--border-color);
+    color: var(--text-color) !important;
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .customer-page .table thead th,
+:root[data-theme="dark"] .admin-page .admin-main .table thead th {
+    background-color: var(--table-head-color) !important;
+}
+
+:root[data-theme="dark"] .theme-toggle {
+    color: #E5EDF8 !important;
+    background: #1A2940 !important;
+    border-color: #405573 !important;
+}
+
+:root[data-theme="dark"] .theme-toggle:hover {
+    background: #263A58 !important;
+    border-color: #78A0FF !important;
+}
+
+/* Dark mode covers every existing page region without changing page markup. */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] body.bg-light,
+:root[data-theme="dark"] body.customer-page,
+:root[data-theme="dark"] body.admin-page,
+:root[data-theme="dark"] body.landing-page,
+:root[data-theme="dark"] body.auth-page {
+    color: #E5EDF8 !important;
+    background: #0B1220 !important;
+}
+
+:root[data-theme="dark"] body :is(header, main, nav, aside, footer, .main-control,
+    .customer-main, .admin-main, .main-header, .main-navigation, .admin-sidebar,
+    .card, .customer-card, .customer-order-summary, .productBox, .landing-product-card,
+    .modal-content, .modal-header, .modal-body, .modal-footer, .dropdown-menu,
+    .list-group-item, .table-responsive, .customer-filter, .landing-category-filter,
+    .login-form-panel, .login-showcase, .signup-form-panel, .auth-card, .checkout-summary,
+    .bg-white, .bg-light, .bg-body, .bg-body-tertiary) {
+    color: #E5EDF8 !important;
+    background-color: #111B2D !important;
+    border-color: #2B3A52 !important;
+}
+
+:root[data-theme="dark"] body :is(h1, h2, h3, h4, h5, h6, p, span, label, small, strong,
+    th, td, li, a, button, .text-dark, .text-body, .text-black, .text-secondary, .text-muted) {
+    color: #E5EDF8 !important;
+}
+
+:root[data-theme="dark"] body :is(.form-control, .form-select, .input-group-text, textarea) {
+    color: #E5EDF8 !important;
+    background-color: #0D1728 !important;
+    border-color: #34445D !important;
+}
+
+:root[data-theme="dark"] body :is(.table, .table > :not(caption) > *, .table thead th,
+    .table tbody tr, .table tbody td) {
+    --bs-table-color: #E5EDF8;
+    --bs-table-bg: #111B2D;
+    --bs-table-border-color: #2B3A52;
+    color: #E5EDF8 !important;
+    background-color: #111B2D !important;
+    border-color: #2B3A52 !important;
+}
+
+:root[data-theme="dark"] body :is(.customer-page section[aria-label="Welcome"], .landing-hero) {
+    background: linear-gradient(120deg, #101827, #172554) !important;
+}
+
+:root[data-theme="dark"] body :is(.btn-warning, .bg-warning, .text-warning-emphasis) {
+    color: #172033 !important;
+}
+
+/* Keep selected customer controls consistent with the Products navigation button. */
+.customer-page :is(.customer-filter .nav-link.active, #categoryFilter .nav-link.active, [data-theme-choice][aria-pressed="true"]) {
+    color: #FFFFFF !important;
+    background: #315FE8 !important;
+    border-color: #315FE8 !important;
+    box-shadow: 0 4px 12px rgba(49, 95, 232, 0.24);
+}
+
+.customer-page :is(.customer-filter .nav-link:hover, #categoryFilter .nav-link:hover, [data-theme-choice]:hover) {
+    color: #FFFFFF !important;
+    background: #315FE8 !important;
+    border-color: #315FE8 !important;
+}
+
+.customer-page :is(.customer-filter .nav-link:focus-visible, #categoryFilter .nav-link:focus-visible, [data-theme-choice]:focus-visible) {
+    outline: 3px solid rgba(49, 95, 232, 0.4);
+    outline-offset: 2px;
+}
+
+.appearance-settings-icon {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 0.75rem;
+    color: #315fe8;
+    background: #eef3ff;
+    font-size: 1.1rem;
+}
+
+:root[data-theme="dark"] .appearance-settings-icon {
+    color: #AFC5FF;
+    background: #243653;
+}
+
+.appearance-settings-card [data-theme-choice] {
+    min-height: 2.65rem;
+    font-weight: 600;
+}

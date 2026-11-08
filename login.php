@@ -29,7 +29,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-3">
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -366,7 +366,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
 
     <script src="backend/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=3"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 
 </html>

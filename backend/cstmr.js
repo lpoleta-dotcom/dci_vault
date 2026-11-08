@@ -121,14 +121,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: card.dataset.description || 'A quality DCI Vault favorite, designed for everyday use.',
                 image: card.dataset.imgFront || card.querySelector('img')?.getAttribute('src') || 'assets/product.jpg',
                 backImage: card.dataset.imgBack || card.dataset.imgFront || card.querySelector('img')?.getAttribute('src') || 'assets/product.jpg',
+                sideImage: card.dataset.imgSide || '',
                 sizes: (card.dataset.sizes || 'One Size').split(',').map(size => size.trim()).filter(Boolean)
             };
             document.getElementById('productModalName').textContent = selectedProduct.name;
             document.getElementById('productModalPrice').textContent = money(selectedProduct.price);
             const description = document.getElementById('productModalDescription');
             if (description) description.textContent = selectedProduct.description;
-            document.getElementById('productModalImgFront').src = selectedProduct.image;
-            document.getElementById('productModalImgBack').src = selectedProduct.backImage;
+            const imageContainer = document.getElementById('productModalImages');
+            const views = [
+                { src: selectedProduct.image, label: 'Front' },
+                { src: selectedProduct.backImage, label: 'Back' },
+                { src: selectedProduct.sideImage, label: 'Side' }
+            ].filter((view, index, all) => view.src && all.findIndex(candidate => candidate.src === view.src) === index);
+            imageContainer.replaceChildren(...views.map((view, index) => {
+                const slide = document.createElement('div');
+                slide.className = `carousel-item h-100${index === 0 ? ' active' : ''}`;
+                const image = document.createElement('img');
+                image.src = view.src;
+                image.alt = `${selectedProduct.name} ${view.label.toLowerCase()} view`;
+                image.className = 'd-block w-100 object-fit-cover h-100';
+                slide.append(image);
+                return slide;
+            }));
+            bootstrap.Carousel.getOrCreateInstance(document.getElementById('productCarousel')).to(0);
             sizeSelect.replaceChildren(...selectedProduct.sizes.map(size => {
                 const option = document.createElement('option');
                 option.value = size;
