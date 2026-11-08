@@ -46,6 +46,7 @@ $shippingAddress = trim(implode(', ', array_filter([
 $orderItems = [];
 $subtotal = 0.00;
 $vat = 0.00;
+$totalQuantity = 0;
 $catalogFallbacks = [
     1 => ['name' => 'Classic T-Shirt', 'price' => 250.00]
 ];
@@ -59,6 +60,10 @@ try {
         if ($productId <= 0 || $quantity === false || $size === '') {
             checkoutRespond(400, ['success' => false, 'message' => 'One or more cart items are invalid.']);
         }
+        if ($quantity > 99 - $totalQuantity) {
+            checkoutRespond(400, ['success' => false, 'message' => 'An order can contain up to 99 items total. Reduce your cart quantity and try again.']);
+        }
+        $totalQuantity += $quantity;
         $itemStmt = $conn->prepare('SELECT p.name, p.price FROM products p WHERE p.product_id = ? LIMIT 1');
         if (!$itemStmt) throw new Exception('Unable to prepare product lookup.');
         $itemStmt->bind_param('i', $productId);

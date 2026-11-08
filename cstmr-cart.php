@@ -9,7 +9,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style/style.css?v=dark-all-3">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
     <script>
         (function () {
             try {
@@ -178,6 +178,7 @@
                                     <option value="card">Credit / Debit Card</option>
                                     <option value="cod">Cash on Delivery / Pickup</option>
                                 </select>
+                                <small id="quantityLimitHint" class="form-text text-secondary" aria-live="polite">0 of 99 items in this order.</small>
                             </div>
                         </div>
 
@@ -252,7 +253,7 @@
         </div>
     </div>
 
-    <script src="backend/cstmr.js?v=vat-inclusive"></script>
+    <script src="backend/cstmr.js?v=order-max-99"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>

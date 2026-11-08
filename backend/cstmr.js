@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
         region.hideTimer = window.setTimeout(() => region.classList.add('d-none'), 3500);
     };
     const money = amount => currency.format(Number(amount) || 0);
+    const maxOrderQuantity = 99;
+    const cartQuantity = items => items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
     function syncAvatar(profile) {
         const sessionManagedImages = document.querySelectorAll('#empAvatar[data-session-managed="true"], #accountAvatarPreview[data-session-managed="true"]');
@@ -151,10 +153,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 option.textContent = size;
                 return option;
             }));
+            let cart = read(keys.cart);
+            if (!Array.isArray(cart)) cart = [];
+            const remainingQuantity = Math.max(0, maxOrderQuantity - cartQuantity(cart));
             quantityInput.value = '1';
-            quantityInput.removeAttribute('max');
-            document.getElementById('productAddToCart').disabled = false;
-            document.getElementById('modalBuyNow').disabled = false;
+            quantityInput.max = String(Math.max(1, remainingQuantity));
+            document.getElementById('productAddToCart').disabled = remainingQuantity === 0;
+            document.getElementById('modalBuyNow').disabled = remainingQuantity === 0;
+            if (remainingQuantity === 0) notify('An order can contain up to 99 items. Remove items from your cart before adding more.');
             modal.show();
         };
         cards.forEach(card => {
@@ -180,6 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let cart = read(keys.cart);
             if (!Array.isArray(cart)) cart = [];
             cart = normalizeCart(cart);
+            if (cartQuantity(cart) + quantity > maxOrderQuantity) {
+                quantityInput.setCustomValidity('An order can contain up to 99 items total.');
+                quantityInput.reportValidity();
+                return;
+            }
+            quantityInput.setCustomValidity('');
             const size = sizeSelect.value || selectedProduct.sizes[0] || 'One Size';
             const existing = cart.find(item => String(item.id) === String(selectedProduct.id) && item.size === size);
             if (existing) existing.quantity += quantity;
@@ -231,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.dataset.index = String(index);
                 row.innerHTML = `<td class="ps-4"><div class="fw-semibold">${escapeHtml(item.name)}</div><small class="text-muted">Product ID: ${escapeHtml(item.id)}</small></td>
                     <td>${escapeHtml(item.size)}</td><td>${money(item.price)}</td>
-                    <td><input type="number" class="form-control form-control-sm shadow-none item-qty" value="${Math.max(1, Number(item.quantity) || 1)}" min="1" aria-label="Quantity for ${escapeHtml(item.name)}" style="width:70px"></td>
+                    <td><input type="number" class="form-control form-control-sm shadow-none item-qty" value="${Math.max(1, Number(item.quantity) || 1)}" min="1" max="${Math.max(1, maxOrderQuantity - (cartQuantity(cart) - Number(item.quantity || 0)))}" aria-label="Quantity for ${escapeHtml(item.name)}" style="width:70px"></td>
                     <td class="fw-semibold item-subtotal">${money(item.price * item.quantity)}</td>
                     <td class="text-end pe-4"><button type="button" class="btn btn-sm text-danger remove-item-btn" aria-label="Remove ${escapeHtml(item.name)}"><i class="bi bi-x-lg" aria-hidden="true"></i></button></td>`;
                 body.append(row);
@@ -250,7 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const emptyButton = document.getElementById('clearCartBtn');
             const orderButton = document.getElementById('placeOrderBtn');
             if (emptyButton) emptyButton.disabled = cart.length === 0;
-            if (orderButton) orderButton.disabled = cart.length === 0;
+            const totalQuantity = cartQuantity(cart);
+            if (orderButton) orderButton.disabled = cart.length === 0 || totalQuantity > maxOrderQuantity;
+            const quantityHint = document.getElementById('quantityLimitHint');
+            if (quantityHint) {
+                quantityHint.textContent = totalQuantity > maxOrderQuantity
+                    ? `Your cart has ${totalQuantity} items. Reduce it to 99 or fewer to continue.`
+                    : `${totalQuantity} of ${maxOrderQuantity} items in this order.`;
+                quantityHint.classList.toggle('text-danger', totalQuantity > maxOrderQuantity);
+            }
         };
         const save = () => {
             write(keys.cart, cart);
@@ -262,9 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = input.closest('tr');
             const item = cart[Number(row.dataset.index)];
             const quantity = Number(input.value);
-            if (!Number.isSafeInteger(quantity) || quantity < 1) {
+            const otherQuantity = cartQuantity(cart) - Number(item.quantity || 0);
+            if (!Number.isSafeInteger(quantity) || quantity < 1 || otherQuantity + quantity > maxOrderQuantity) {
                 input.value = String(item.quantity);
-                input.setCustomValidity('Choose a positive whole-number quantity.');
+                input.setCustomValidity(otherQuantity + quantity > maxOrderQuantity
+                    ? `This order can contain up to ${maxOrderQuantity} items total.`
+                    : 'Choose a positive whole-number quantity.');
                 input.reportValidity();
                 return;
             }
@@ -302,6 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
             placeOrderButton.addEventListener('click', () => {
                 if (!cart.length) {
                     notify('Your cart is empty.');
+                    return;
+                }
+                if (cartQuantity(cart) > maxOrderQuantity) {
+                    notify(`An order can contain up to ${maxOrderQuantity} items total. Reduce your cart quantity first.`);
                     return;
                 }
                 pendingOrder = null;

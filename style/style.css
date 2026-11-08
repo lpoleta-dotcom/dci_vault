@@ -2050,3 +2050,33 @@ body {
     min-height: 2.65rem;
     font-weight: 600;
 }
+
+.customer-page .view-order-btn,
+.customer-page .view-order-btn:focus {
+    color: #FFFFFF !important;
+    background: #315FE8 !important;
+    border: 1px solid #315FE8 !important;
+    border-radius: 0.65rem;
+    box-shadow: 0 4px 12px rgba(49, 95, 232, 0.2);
+}
+
+.customer-page .view-order-btn:hover,
+.customer-page .view-order-btn:active {
+    color: #FFFFFF !important;
+    background: #244ED0 !important;
+    border-color: #244ED0 !important;
+}
+
+.landing-page .landing-hero-button,
+.landing-page .landing-hero-button:focus {
+    color: #FFFFFF !important;
+    background: #315FE8 !important;
+    border-color: #315FE8 !important;
+}
+
+.landing-page .landing-hero-button:hover,
+.landing-page .landing-hero-button:active {
+    color: #FFFFFF !important;
+    background: #244ED0 !important;
+    border-color: #244ED0 !important;
+}

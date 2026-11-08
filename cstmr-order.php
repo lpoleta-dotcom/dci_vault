@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=dark-all-3">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
     <script>
         (function () {
             try {
@@ -256,7 +256,7 @@
     </div>
 
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=vat-inclusive"></script>
+    <script src="backend/cstmr.js?v=order-max-99"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>
