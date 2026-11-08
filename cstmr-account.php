@@ -215,6 +215,15 @@ $escape = function ($value) {
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style/style.css">
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <!-- Russian Nesting Doll Layout -->
@@ -448,6 +457,7 @@ $escape = function ($value) {
     <!-- Custom JavaScript file -->
     <script src="backend/cstmr.js?v=vat-inclusive"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="backend/theme.js?v=3"></script>
 </body>
 
 </html>

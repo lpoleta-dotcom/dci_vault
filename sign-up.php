@@ -233,6 +233,15 @@ unset($_SESSION['signup_error']);
             }
         }
     </style>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <body class="auth-page min-vh-100 d-flex flex-column bg-light">
@@ -437,6 +446,7 @@ unset($_SESSION['signup_error']);
         </div>
 
         <script src="backend/app.js"></script>
+    <script src="backend/theme.js?v=3"></script>
 </body>
 
 </html>

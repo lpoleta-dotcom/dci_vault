@@ -136,7 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return option;
             }));
             quantityInput.value = '1';
-            quantityInput.max = '99';
+            quantityInput.removeAttribute('max');
+            document.getElementById('productAddToCart').disabled = false;
+            document.getElementById('modalBuyNow').disabled = false;
             modal.show();
         };
         cards.forEach(card => {
@@ -152,9 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const addSelection = (goToCart = false) => {
             if (!selectedProduct) return;
-            const quantity = Math.floor(Number(quantityInput.value));
-            if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
-                quantityInput.setCustomValidity('Choose a quantity between 1 and 99.');
+            const quantity = Number(quantityInput.value);
+            if (!Number.isSafeInteger(quantity) || quantity < 1) {
+                quantityInput.setCustomValidity('Choose a positive whole-number quantity.');
                 quantityInput.reportValidity();
                 return;
             }
@@ -213,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.dataset.index = String(index);
                 row.innerHTML = `<td class="ps-4"><div class="fw-semibold">${escapeHtml(item.name)}</div><small class="text-muted">Product ID: ${escapeHtml(item.id)}</small></td>
                     <td>${escapeHtml(item.size)}</td><td>${money(item.price)}</td>
-                    <td><input type="number" class="form-control form-control-sm shadow-none item-qty" value="${Math.max(1, Number(item.quantity) || 1)}" min="1" max="99" aria-label="Quantity for ${escapeHtml(item.name)}" style="width:70px"></td>
+                    <td><input type="number" class="form-control form-control-sm shadow-none item-qty" value="${Math.max(1, Number(item.quantity) || 1)}" min="1" aria-label="Quantity for ${escapeHtml(item.name)}" style="width:70px"></td>
                     <td class="fw-semibold item-subtotal">${money(item.price * item.quantity)}</td>
                     <td class="text-end pe-4"><button type="button" class="btn btn-sm text-danger remove-item-btn" aria-label="Remove ${escapeHtml(item.name)}"><i class="bi bi-x-lg" aria-hidden="true"></i></button></td>`;
                 body.append(row);
@@ -243,10 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!input) return;
             const row = input.closest('tr');
             const item = cart[Number(row.dataset.index)];
-            const quantity = Math.floor(Number(input.value));
-            if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+            const quantity = Number(input.value);
+            if (!Number.isSafeInteger(quantity) || quantity < 1) {
                 input.value = String(item.quantity);
-                input.setCustomValidity('Choose a quantity between 1 and 99.');
+                input.setCustomValidity('Choose a positive whole-number quantity.');
                 input.reportValidity();
                 return;
             }

@@ -243,6 +243,15 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
             }
         }
     </style>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <body class="auth-page min-vh-100 d-flex flex-column bg-light">
@@ -357,6 +366,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
 
     <script src="backend/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="backend/theme.js?v=3"></script>
 </body>
 
 </html>

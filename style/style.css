@@ -3,6 +3,36 @@
    ========================================== */
 
 :root {
+    color-scheme: light;
+    --page-color: #F1F5F9;
+    --surface-color: #FFFFFF;
+    --raised-color: #FFFFFF;
+    --text-color: #0F172A;
+    --muted-color: #64748B;
+    --border-color: #E2E8F0;
+    --field-color: #FFFFFF;
+    --table-head-color: #F8FAFC;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --primary-color: #E2E8F0;
+    --secondary-color: #A3B1C6;
+    --tertiary-color: #0B1220;
+    --surface-color: #111B2D;
+    --raised-color: #172338;
+    --text-color: #E2E8F0;
+    --muted-color: #A3B1C6;
+    --border-color: #2B3A52;
+    --field-color: #0F192A;
+    --table-head-color: #1B2940;
+    --contrast-primary: #3B82F6;
+    --contrast-secondary: #60A5FA;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+:root {
     /* COLOR PALETTE (Matched to DCI Navy & Silver Branding) */
     --primary-color: #0F172A;       /* Deep Academic Navy */
     --secondary-color: #64748B;     /* Cool Slate Gray */
@@ -31,8 +61,100 @@
 /* GENERAL ELEMENTS */
 body {
     font-family: var(--f-stack);
-    background-color: var(--tertiary-color);
-    color: var(--primary-color);
+    background-color: var(--page-color, var(--tertiary-color));
+    color: var(--text-color, var(--primary-color));
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    flex: 0 0 auto;
+    min-height: 2.45rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--surface-color);
+    color: var(--text-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+}
+
+.theme-toggle:hover {
+    border-color: var(--contrast-primary);
+    color: var(--contrast-primary);
+    transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.4);
+    outline-offset: 2px;
+}
+
+.theme-toggle-floating {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1100;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .bg-light {
+    background-color: var(--page-color) !important;
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] :is(.bg-white, .card, .modal-content, .dropdown-menu, .list-group-item,
+    .customer-card, .customer-order-summary, .checkout-summary, .productBox, .main-header,
+    .login-form-panel, .login-showcase, .signup-form-panel, .auth-card) {
+    background-color: var(--surface-color) !important;
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] :is(.text-dark, .text-body, .text-black) {
+    color: var(--text-color) !important;
+}
+
+:root[data-theme="dark"] :is(.text-secondary, .text-muted, .customer-page-intro) {
+    color: var(--muted-color) !important;
+}
+
+:root[data-theme="dark"] :is(.border, .border-top, .border-end, .border-bottom, .border-start,
+    .table, .table th, .table td, .form-control, .form-select, .input-group-text, .modal-header,
+    .modal-footer, hr) {
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] :is(.form-control, .form-select, .input-group-text) {
+    background-color: var(--field-color);
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] .form-control::placeholder { color: #8493A9; }
+:root[data-theme="dark"] .form-select option { background-color: var(--field-color); color: var(--text-color); }
+:root[data-theme="dark"] .table { --bs-table-color: var(--text-color); --bs-table-bg: var(--surface-color); --bs-table-border-color: var(--border-color); }
+:root[data-theme="dark"] .table-light { --bs-table-color: var(--text-color); --bs-table-bg: var(--table-head-color); --bs-table-border-color: var(--border-color); }
+:root[data-theme="dark"] .table-hover > tbody > tr:hover > * { --bs-table-bg-state: #1B2A42; color: var(--text-color); }
+:root[data-theme="dark"] .btn-outline-dark { color: var(--text-color); border-color: #64748B; }
+:root[data-theme="dark"] .btn-outline-dark:hover { color: #FFFFFF; background-color: #334155; }
+:root[data-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+:root[data-theme="dark"] .shadow-sm, :root[data-theme="dark"] .shadow { box-shadow: var(--shadow-sm) !important; }
+:root[data-theme="dark"] .customer-nav .nav-link:not(.active) { color: var(--muted-color) !important; }
+:root[data-theme="dark"] .customer-nav .nav-link:not(.active):hover { color: #FFFFFF !important; }
+:root[data-theme="dark"] .customer-filter { background-color: var(--surface-color) !important; }
+:root[data-theme="dark"] #categoryFilter .nav-link:not(.active) { background-color: var(--raised-color); color: var(--muted-color); }
+:root[data-theme="dark"] .admin-sidebar { background-color: #080F1D !important; }
+:root[data-theme="dark"] .auth-page .password-toggle { background-color: var(--raised-color); color: var(--muted-color); }
+:root[data-theme="dark"] .auth-page .password-toggle:hover { background-color: #22314A; color: #93C5FD; }
+:root[data-theme="dark"] .auth-page :is(.form-control, .form-select) { background-color: var(--field-color); color: var(--text-color); }
+
+@media (max-width: 700px) {
+    .theme-toggle { width: 2.45rem; padding-inline: 0; }
+    .theme-toggle span { display: none; }
 }
 
 .center-screen {
@@ -1416,6 +1538,139 @@ body {
     .admin-page .admin-sidebar .nav-link:hover {
         transform: none !important;
     }
+}
+
+/* Final theme layer: placed last so page-specific light styles cannot override it. */
+:root[data-theme="dark"] {
+    --page-color: #0B1220;
+    --surface-color: #111B2D;
+    --raised-color: #172338;
+    --text-color: #E5EDF8;
+    --muted-color: #A3B1C6;
+    --border-color: #2B3A52;
+    --field-color: #0D1728;
+    --table-head-color: #1B2940;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] body.customer-page,
+:root[data-theme="dark"] body.admin-page,
+:root[data-theme="dark"] body.landing-page,
+:root[data-theme="dark"] body.auth-page {
+    color: var(--text-color) !important;
+    background-color: var(--page-color) !important;
+}
+
+:root[data-theme="dark"] .customer-page {
+    --customer-ink: #E5EDF8;
+    --customer-muted: #A3B1C6;
+    --customer-line: #2B3A52;
+    background: var(--page-color) !important;
+}
+
+:root[data-theme="dark"] .admin-page {
+    --admin-ink: #E5EDF8;
+    --admin-muted: #A3B1C6;
+    --admin-line: #2B3A52;
+    background: var(--page-color) !important;
+}
+
+:root[data-theme="dark"] :is(.customer-page .main-control.customer-main, .admin-page .admin-main) {
+    background: radial-gradient(ellipse at 92% 8%, rgba(59, 130, 246, 0.08), transparent 30rem), var(--page-color) !important;
+}
+
+:root[data-theme="dark"] :is(.main-header, .bg-white, .card, .customer-card, .productBox,
+    .customer-order-summary, .modal-content, .dropdown-menu, .list-group-item,
+    .customer-filter, .table-responsive, .login-form-panel, .login-showcase,
+    .signup-form-panel, .auth-card) {
+    color: var(--text-color) !important;
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] :is(.customer-page .customer-main h2, .admin-page .admin-main h2,
+    .customer-page .customer-card h5, .customer-page .customer-profile-card h5,
+    .admin-page .admin-main .card h3, .admin-page .admin-main .card h5) {
+    color: var(--text-color) !important;
+}
+
+:root[data-theme="dark"] :is(.text-dark, .text-body, .text-black, .customer-page .form-label) {
+    color: var(--text-color) !important;
+}
+
+:root[data-theme="dark"] :is(.text-secondary, .text-muted, .customer-page-intro,
+    .customer-page .customer-page-intro, .admin-page .admin-main h2 + p) {
+    color: var(--muted-color) !important;
+}
+
+:root[data-theme="dark"] :is(.customer-page .form-control, .customer-page .form-select,
+    .admin-page .admin-main .form-control, .admin-page .admin-main .form-select,
+    .auth-page .form-control, .auth-page .form-select, .input-group-text) {
+    color: var(--text-color) !important;
+    background-color: var(--field-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] :is(.customer-page .form-control:focus, .customer-page .form-select:focus,
+    .admin-page .admin-main .form-control:focus, .admin-page .admin-main .form-select:focus) {
+    background-color: var(--field-color) !important;
+    border-color: #5B8CFF !important;
+}
+
+:root[data-theme="dark"] :is(.table, .table > :not(caption) > *, .table thead th,
+    .customer-page .table thead th, .admin-page .admin-main .table thead th) {
+    --bs-table-color: var(--text-color);
+    --bs-table-bg: var(--surface-color);
+    --bs-table-border-color: var(--border-color);
+    color: var(--text-color) !important;
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] :is(.table-light, .customer-page .table thead th,
+    .admin-page .admin-main .table thead th) {
+    background-color: var(--table-head-color) !important;
+}
+
+:root[data-theme="dark"] :is(.customer-page .customer-nav .nav-link:not(.active),
+    .customer-page .customer-filter .nav-link:not(.active), .admin-page .admin-sidebar) {
+    color: var(--muted-color) !important;
+}
+
+:root[data-theme="dark"] .admin-page .admin-sidebar {
+    background: linear-gradient(180deg, #080F1D 0%, #111B2D 100%) !important;
+}
+
+:root[data-theme="dark"] .theme-toggle {
+    color: #DCE8F8;
+    background: #1A2940;
+    border-color: #334763;
+}
+
+:root[data-theme="dark"] .theme-toggle:hover {
+    color: #FFFFFF;
+    background: #243653;
+    border-color: #5B8CFF;
+}
+
+.theme-toggle {
+    min-width: 7.2rem;
+    min-height: 2.55rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid #D7DFEA;
+    border-radius: 999px;
+    color: #26364D;
+    background: #F8FAFD;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+    font-weight: 650;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle i { font-size: 1rem; }
+.theme-toggle:hover { transform: translateY(-1px); }
+
+@media (max-width: 700px) {
+    .theme-toggle { min-width: 2.55rem; }
 }
 
 .checkout-modal {

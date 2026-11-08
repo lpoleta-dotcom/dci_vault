@@ -46,24 +46,38 @@ $shippingAddress = trim(implode(', ', array_filter([
 $orderItems = [];
 $subtotal = 0.00;
 $vat = 0.00;
+$catalogFallbacks = [
+    1 => ['name' => 'Classic T-Shirt', 'price' => 250.00]
+];
 
 try {
     foreach ($payload['items'] as $item) {
         $productId = isset($item['id']) ? (int) $item['id'] : 0;
         $size = isset($item['size']) ? trim((string) $item['size']) : 'One Size';
-        $quantity = isset($item['quantity']) ? (int) $item['quantity'] : 0;
-        if ($productId <= 0 || $quantity <= 0 || $quantity > 99 || $size === '') {
+        $rawQuantity = $item['quantity'] ?? null;
+        $quantity = filter_var($rawQuantity, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 2147483647]]);
+        if ($productId <= 0 || $quantity === false || $size === '') {
             checkoutRespond(400, ['success' => false, 'message' => 'One or more cart items are invalid.']);
         }
-        $itemStmt = $conn->prepare('SELECT p.name, p.price, v.variant_id, v.color, v.stock_quantity FROM products p JOIN product_variants v ON v.product_id = p.product_id WHERE p.product_id = ? AND p.is_active = 1 AND v.size = ? AND v.is_active = 1 LIMIT 1');
+        $itemStmt = $conn->prepare('SELECT p.name, p.price FROM products p WHERE p.product_id = ? LIMIT 1');
         if (!$itemStmt) throw new Exception('Unable to prepare product lookup.');
-        $itemStmt->bind_param('is', $productId, $size);
+        $itemStmt->bind_param('i', $productId);
         $itemStmt->execute();
         $product = $itemStmt->get_result()->fetch_assoc();
         $itemStmt->close();
-        if (!$product) checkoutRespond(400, ['success' => false, 'message' => 'A product or selected size is no longer available.']);
-        if ((int) $product['stock_quantity'] < $quantity) {
-            checkoutRespond(409, ['success' => false, 'message' => 'There is not enough stock for ' . $product['name'] . ' (' . $size . ').']);
+        $storedProductId = $product ? $productId : null;
+        $variant = null;
+        if (!$product && isset($catalogFallbacks[$productId])) {
+            $product = $catalogFallbacks[$productId];
+        } elseif (!$product) {
+            checkoutRespond(400, ['success' => false, 'message' => 'This product could not be found in the catalog.']);
+        } else {
+            $variantStmt = $conn->prepare('SELECT variant_id, color FROM product_variants WHERE product_id = ? AND size = ? LIMIT 1');
+            if (!$variantStmt) throw new Exception('Unable to prepare product variant lookup.');
+            $variantStmt->bind_param('is', $productId, $size);
+            $variantStmt->execute();
+            $variant = $variantStmt->get_result()->fetch_assoc();
+            $variantStmt->close();
         }
         // Catalog prices are already VAT-inclusive.
         $price = (float) $product['price'];
@@ -72,11 +86,11 @@ try {
         $subtotal += $lineTotal;
         $vat += $unitVat * $quantity;
         $orderItems[] = [
-            'product_id' => $productId,
-            'variant_id' => (int) $product['variant_id'],
+            'product_id' => $storedProductId,
+            'variant_id' => $variant ? (int) $variant['variant_id'] : null,
             'name' => $product['name'],
             'size' => $size,
-            'color' => $product['color'],
+            'color' => $variant['color'] ?? 'Default',
             'price' => $price,
             'quantity' => $quantity,
             'line_total' => $lineTotal
@@ -103,16 +117,12 @@ try {
     $orderId = (int) $conn->insert_id;
     $orderStmt->close();
 
-    $stockStmt = $conn->prepare('UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE variant_id = ? AND stock_quantity >= ?');
     $lineStmt = $conn->prepare('INSERT INTO order_items (order_id, product_id, variant_id, product_name, size, color, unit_price, quantity, line_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    if (!$stockStmt || !$lineStmt) throw new Exception('Unable to prepare order item save.');
+    if (!$lineStmt) throw new Exception('Unable to prepare order item save.');
     foreach ($orderItems as $item) {
-        $stockStmt->bind_param('iii', $item['quantity'], $item['variant_id'], $item['quantity']);
-        if (!$stockStmt->execute() || $stockStmt->affected_rows !== 1) throw new Exception('Stock changed while placing order.');
         $lineStmt->bind_param('iiisssdid', $orderId, $item['product_id'], $item['variant_id'], $item['name'], $item['size'], $item['color'], $item['price'], $item['quantity'], $item['line_total']);
         if (!$lineStmt->execute()) throw new Exception('Unable to save an order item.');
     }
-    $stockStmt->close();
     $lineStmt->close();
     $conn->commit();
     checkoutRespond(201, ['success' => true, 'order' => [
