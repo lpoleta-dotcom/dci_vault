@@ -1,0 +1,65 @@
+(() => {
+    const storageKey = 'dci-vault-theme';
+    const root = document.documentElement;
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem(storageKey); } catch (error) {}
+    const initialTheme = savedTheme === 'dark' || savedTheme === 'light'
+        ? savedTheme
+        : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    const applyTheme = theme => {
+        root.dataset.theme = theme;
+        const button = document.getElementById('themeToggle');
+        const isDark = theme === 'dark';
+        if (button) {
+            button.classList.toggle('theme-toggle-dark', isDark);
+            button.setAttribute('aria-pressed', String(isDark));
+            button.setAttribute('aria-label', `Switch to ${isDark ? 'light' : 'dark'} mode`);
+            button.title = `Switch to ${isDark ? 'light' : 'dark'} mode`;
+            button.innerHTML = `<i class="bi bi-${isDark ? 'sun' : 'moon-stars'}-fill" aria-hidden="true"></i><span>${isDark ? 'Light' : 'Dark'}</span>`;
+        }
+        document.querySelectorAll('[data-theme-choice]').forEach(choice => {
+            const selected = choice.dataset.themeChoice === theme;
+            choice.setAttribute('aria-pressed', String(selected));
+            choice.classList.toggle('btn-primary', selected);
+            choice.classList.toggle('btn-outline-secondary', !selected);
+        });
+        const status = document.getElementById('themePreferenceStatus');
+        if (status) status.textContent = `${isDark ? 'Dark' : 'Light'} mode is active.`;
+    };
+
+    applyTheme(initialTheme);
+    document.addEventListener('DOMContentLoaded', () => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = 'themeToggle';
+        const header = document.querySelector('.main-header');
+        const profile = header?.querySelector('.user-profile');
+        const slot = document.getElementById('themeToggleSlot');
+        button.className = `theme-toggle btn${header ? '' : ' theme-toggle-floating'}`;
+        button.setAttribute('aria-pressed', String(initialTheme === 'dark'));
+        if (slot) {
+            slot.append(button);
+        } else if (profile) {
+            const nameBlock = profile.querySelector('div');
+            if (nameBlock) profile.insertBefore(button, nameBlock);
+            else profile.prepend(button);
+        }
+        else if (header) header.append(button);
+        else document.body.append(button);
+        applyTheme(root.dataset.theme);
+        button.addEventListener('click', () => {
+            const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+            try { localStorage.setItem(storageKey, theme); } catch (error) {}
+            applyTheme(theme);
+        });
+        document.querySelectorAll('[data-theme-choice]').forEach(choice => {
+            choice.addEventListener('click', () => {
+                const theme = choice.dataset.themeChoice;
+                if (theme !== 'dark' && theme !== 'light') return;
+                try { localStorage.setItem(storageKey, theme); } catch (error) {}
+                applyTheme(theme);
+            });
+        });
+    });
+})();

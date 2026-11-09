@@ -19,7 +19,7 @@ unset($_SESSION['signup_error']);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -233,6 +233,15 @@ unset($_SESSION['signup_error']);
             }
         }
     </style>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <body class="auth-page min-vh-100 d-flex flex-column bg-light">
@@ -437,6 +446,7 @@ unset($_SESSION['signup_error']);
         </div>
 
         <script src="backend/app.js"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 
 </html>
