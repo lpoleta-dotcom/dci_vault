@@ -214,7 +214,16 @@ $escape = function ($value) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <!-- Russian Nesting Doll Layout -->
@@ -317,6 +326,25 @@ $escape = function ($value) {
                             </button>
                         </form>
                     </div>
+
+                    <section class="card customer-card appearance-settings-card border-0 shadow-sm p-4 mt-4" aria-labelledby="appearanceSettingsTitle" style="border-radius: var(--prod-rd, 1rem);">
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <span class="appearance-settings-icon" aria-hidden="true"><i class="bi bi-palette2"></i></span>
+                            <div>
+                                <h5 id="appearanceSettingsTitle" class="fw-bold mb-1">Appearance</h5>
+                                <p class="text-secondary small mb-0">Choose how DCI Vault looks on this device.</p>
+                            </div>
+                        </div>
+                        <div class="btn-group w-100" role="group" aria-label="Choose light or dark mode">
+                            <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" aria-pressed="false">
+                                <i class="bi bi-sun me-1" aria-hidden="true"></i>Light
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-theme-choice="dark" aria-pressed="false">
+                                <i class="bi bi-moon-stars me-1" aria-hidden="true"></i>Dark
+                            </button>
+                        </div>
+                        <small id="themePreferenceStatus" class="text-secondary mt-2" role="status" aria-live="polite"></small>
+                    </section>
                 </div>
 
                 <!-- Right Column: Personal Details & Password Form -->
@@ -446,8 +474,9 @@ $escape = function ($value) {
     </div>
 
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=session-history"></script>
+    <script src="backend/cstmr.js?v=order-max-99"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 
 </html>

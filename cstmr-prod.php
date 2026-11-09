@@ -1,11 +1,79 @@
 <?php
 require_once 'customer-session.php';
+require_once 'catalog-bootstrap.php';
 
 $customerName = trim($customerHeaderUsername);
 $profileName = $customerName !== '' ? $customerName : 'Customer';
 $welcomeMessage = $customerName !== ''
     ? 'Welcome back, ' . $customerName . '!'
     : 'Welcome to DCI Vault!';
+
+$catalogProducts = [];
+$catalogContains = static function ($value, $part) {
+    return strpos((string) $value, (string) $part) !== false;
+};
+$productResult = $conn->query("SELECT p.product_id, p.name, p.description, p.price, c.name AS category_name, c.slug AS category_slug FROM products p LEFT JOIN categories c ON c.category_id = p.category_id WHERE p.is_active = 1 ORDER BY FIELD(c.slug, 'tshirt', 'bottom', 'outerwear', 'accessory'), p.name");
+if ($productResult) {
+    while ($product = $productResult->fetch_assoc()) {
+        $product['images'] = ['front' => '', 'back' => '', 'side' => ''];
+        $product['sizes'] = [];
+        $catalogProducts[(int) $product['product_id']] = $product;
+    }
+}
+
+$imageResult = $conn->query('SELECT product_id, image_url, view_label FROM product_images ORDER BY sort_order, image_id');
+if ($imageResult) {
+    while ($image = $imageResult->fetch_assoc()) {
+        $id = (int) $image['product_id'];
+        if (!isset($catalogProducts[$id])) continue;
+        $label = strtolower(trim((string) $image['view_label']));
+        $url = trim((string) $image['image_url']);
+        if ($url === '') continue;
+        if ($catalogContains($label, 'front') && $catalogProducts[$id]['images']['front'] === '') $catalogProducts[$id]['images']['front'] = $url;
+        elseif ($catalogContains($label, 'back') && $catalogProducts[$id]['images']['back'] === '') $catalogProducts[$id]['images']['back'] = $url;
+        elseif (($catalogContains($label, 'side') || $catalogContains($label, '3/4') || $catalogContains($label, 'three quarter') || $catalogContains($label, 'detail') || $catalogContains($label, 'zoom')) && $catalogProducts[$id]['images']['side'] === '') $catalogProducts[$id]['images']['side'] = $url;
+    }
+}
+
+$variantResult = $conn->query('SELECT product_id, size FROM product_variants WHERE is_active = 1 ORDER BY product_id, size');
+if ($variantResult) {
+    while ($variant = $variantResult->fetch_assoc()) {
+        $id = (int) $variant['product_id'];
+        if (isset($catalogProducts[$id]) && !in_array($variant['size'], $catalogProducts[$id]['sizes'], true)) {
+            $catalogProducts[$id]['sizes'][] = $variant['size'];
+        }
+    }
+}
+
+$assetCategoryFolders = ['tshirt' => 'tshirt', 'bottom' => 'bottom', 'outerwear' => 'outerwear', 'accessory' => 'accessory'];
+foreach ($catalogProducts as &$product) {
+    $categorySlug = strtolower((string) ($product['category_slug'] ?? ''));
+    $categoryFolder = $assetCategoryFolders[$categorySlug] ?? '';
+    if ($categoryFolder !== '') {
+        $assetCategoryPath = __DIR__ . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . $categoryFolder;
+        $productToken = preg_replace('/[^a-z0-9]/', '', strtolower((string) $product['name']));
+        foreach (glob($assetCategoryPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [] as $productFolder) {
+            $folderToken = preg_replace('/[^a-z0-9]/', '', strtolower(basename($productFolder)));
+            if ($folderToken === '' || (!$catalogContains($productToken, $folderToken) && !$catalogContains($folderToken, $productToken))) continue;
+            foreach (glob($productFolder . DIRECTORY_SEPARATOR . '*') ?: [] as $imagePath) {
+                if (!is_file($imagePath)) continue;
+                $filename = strtolower(basename($imagePath));
+                $relativePath = str_replace(DIRECTORY_SEPARATOR, '/', substr($imagePath, strlen(__DIR__) + 1));
+                if ($catalogContains($filename, 'front') && $product['images']['front'] === '') $product['images']['front'] = $relativePath;
+                elseif ($catalogContains($filename, 'back') && $product['images']['back'] === '') $product['images']['back'] = $relativePath;
+                elseif (($catalogContains($filename, 'side') || $catalogContains($filename, '3-4') || $catalogContains($filename, 'threequarter') || $catalogContains($filename, 'detail') || $catalogContains($filename, 'zoom')) && $product['images']['side'] === '') $product['images']['side'] = $relativePath;
+            }
+            break;
+        }
+    }
+    if ($product['images']['front'] === '') $product['images']['front'] = $product['images']['back'] ?: ($product['images']['side'] ?: 'assets/placeholder.jpg');
+    if (!$product['sizes']) $product['sizes'] = ['One Size'];
+}
+unset($product);
+
+$catalogEscape = static function ($value) {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +88,16 @@ $welcomeMessage = $customerName !== ''
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <!-- Russian Nesting Doll Layout: Locks screen height and prevents double scrollbars -->
@@ -94,7 +171,7 @@ $welcomeMessage = $customerName !== ''
                 <div>
                     <span class="customer-eyebrow">YOUR NEXT FAVORITE</span>
                     <h2 class="h3 fw-bold text-dark m-0">Product Catalog</h2>
-                    <p class="customer-page-intro mb-0 mt-1">Explore everyday essentials and find something you love.</p>
+                    <p class="customer-page-intro mb-0 mt-1">Explore everyday essentials and find something you love. Prices include 12% VAT.</p>
                 </div>
 
                 <ul class="nav nav-pills flex-nowrap gap-1 p-1 bg-white customer-filter" id="categoryFilter" role="tablist" aria-label="Filter products by category">
@@ -123,27 +200,39 @@ $welcomeMessage = $customerName !== ''
 
             <!-- Responsive Product Grid -->
             <div id="productGrid" class="row g-3">
-
-                <!-- Product Card Template -->
-                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                    <div class="productBox h-100 d-flex flex-column product-card card border-0 shadow-sm p-3 bg-white" 
-                        data-product-id="1" 
-                        data-name="Classic T-Shirt"
-                        data-category="tshirt"
-                        data-price="250.00"
-                        data-description="A soft, everyday DCI classic with a comfortable fit. Easy to pair, easy to wear, and made for showing your department pride."
-                        data-sizes="S,M,L,XL"
-                        data-img-front="assets/product.jpg"
-                        data-img-back="assets/product.jpg">
-                        <div class="card-body d-flex flex-column p-0">
-                            <img src="assets/product.jpg" class="card-img-top object-fit-cover rounded mb-2" alt="product"
-                                style="height: 130px;">
-                            <h4 id="productName" class="productName fs-6 mb-1 text-truncate fw-semibold text-dark p-0">Classic T-Shirt</h4>
-                            <h5 id="productPrice" class="productPrice fs-6 mb-3 p-0">P250.00</h5>
-                            <button class="productBuyButton btn btn-sm mt-auto add-to-cart-btn fw-semibold w-100 m-0">Add to Cart</button>
+                <?php if ($catalogProducts): ?>
+                    <?php foreach ($catalogProducts as $product): ?>
+                        <?php
+                        $imageFront = $product['images']['front'];
+                        $imageBack = $product['images']['back'];
+                        $imageSide = $product['images']['side'];
+                        $sizes = implode(',', $product['sizes']);
+                        ?>
+                        <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                            <div class="productBox h-100 d-flex flex-column product-card card border-0 shadow-sm p-3 bg-white"
+                                data-product-id="<?php echo (int) $product['product_id']; ?>"
+                                data-name="<?php echo $catalogEscape($product['name']); ?>"
+                                data-category="<?php echo $catalogEscape($product['category_slug'] ?? 'all'); ?>"
+                                data-price="<?php echo $catalogEscape($product['price']); ?>"
+                                data-description="<?php echo $catalogEscape($product['description'] ?? ''); ?>"
+                                data-sizes="<?php echo $catalogEscape($sizes); ?>"
+                                data-img-front="<?php echo $catalogEscape($imageFront); ?>"
+                                data-img-back="<?php echo $catalogEscape($imageBack); ?>"
+                                data-img-side="<?php echo $catalogEscape($imageSide); ?>">
+                                <div class="card-body d-flex flex-column p-0">
+                                    <img src="<?php echo $catalogEscape($imageFront); ?>" class="card-img-top object-fit-cover rounded mb-2" alt="<?php echo $catalogEscape($product['name']); ?> front view" style="height: 180px;">
+                                    <h4 class="productName fs-6 mb-1 text-truncate fw-semibold text-dark p-0"><?php echo $catalogEscape($product['name']); ?></h4>
+                                    <h5 class="productPrice fs-6 mb-3 p-0"><?php echo $catalogEscape($product['price']); ?></h5>
+                                    <button type="button" class="productBuyButton btn btn-sm mt-auto add-to-cart-btn fw-semibold w-100 m-0">View Product</button>
+                                </div>
+                            </div>
                         </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12">
+                        <div class="alert alert-light border text-secondary mb-0" role="status">No active products are available in the catalog yet.</div>
                     </div>
-                </div>
+                <?php endif; ?>
             </div>
 
             <!-- Product Details Modal -->
@@ -158,15 +247,8 @@ $welcomeMessage = $customerName !== ''
                                 <!-- Left: Image Carousel -->
                                 <div class="col-md-6">
                                     <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
-                                        <div class="carousel-inner rounded overflow-hidden modal-carousel-inner" style="height: 280px;">
-                                            <div class="carousel-item active h-100">
-                                                <img id="productModalImgFront" src="assets/product.jpg"
-                                                    class="d-block w-100 object-fit-cover h-100" alt="Front view">
-                                            </div>
-                                            <div class="carousel-item h-100">
-                                                <img id="productModalImgBack" src="assets/product.jpg"
-                                                    class="d-block w-100 object-fit-cover h-100" alt="Back view">
-                                            </div>
+                                        <div id="productModalImages" class="carousel-inner rounded overflow-hidden modal-carousel-inner" style="height: 280px;">
+                                            <div class="carousel-item active h-100"><img src="assets/placeholder.jpg" class="d-block w-100 object-fit-cover h-100" alt="Product view"></div>
                                         </div>
                                         <button class="carousel-control-prev" type="button"
                                             data-bs-target="#productCarousel" data-bs-slide="prev">
@@ -209,7 +291,7 @@ $welcomeMessage = $customerName !== ''
                                             style="background-color: var(--contrast-primary, #2563EB);">Add to Cart</button>
                                         <button id="modalBuyNow" 
                                             class="btn text-white flex-grow-1 fw-semibold py-2 shadow-sm"
-                                            style="background-color: var(--primary-color, #0F172A);">Buy Now</button>
+                                            style="background-color: var(--contrast-primary, #2563EB);">Buy Now</button>
                                     </div>
                                 </div>
                             </div>
@@ -221,6 +303,7 @@ $welcomeMessage = $customerName !== ''
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/cstmr.js?v=session-history"></script>
+    <script src="backend/cstmr.js?v=order-max-99"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 </html>

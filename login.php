@@ -29,7 +29,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -243,6 +243,15 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
             }
         }
     </style>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <body class="auth-page min-vh-100 d-flex flex-column bg-light">
@@ -256,10 +265,11 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
         <div class="main-name d-flex align-items-center gap-2">
             <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border" width="40" height="40">
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            <span id="themeToggleSlot" class="ms-2"></span>
         </div>
 
         <!-- Navigation Action -->
-        <div>
+        <div class="ms-auto me-2">
             <a href="index.html"
                 class="btn btn-outline-dark px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
                 <i class="bi bi-bag me-1"></i><span>Continue shopping</span>
@@ -357,6 +367,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
 
     <script src="backend/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 
 </html>

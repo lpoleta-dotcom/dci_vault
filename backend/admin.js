@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
             saveProductBtn.textContent = 'Update Product';
             document.getElementById('productNameInput').value = cells[0].querySelector('.fw-semibold')?.textContent.trim() || '';
             document.getElementById('productCategoryInput').value = cells[2].textContent.trim();
-            document.getElementById('productPriceInput').value = cells[3].textContent.replace(/[^\d.]/g, '');
+            document.getElementById('productPriceInput').value = Number(cells[3].textContent.replace(/[^\d.]/g, '')).toFixed(2);
             document.querySelectorAll('.product-size-checkbox').forEach(checkbox => {
                 checkbox.checked = sizes.includes(checkbox.value);
             });
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function () {
             filterOrders();
         }));
 
-        ordersTableBody?.addEventListener('click', event => {
+        ordersTableBody?.addEventListener('click', async event => {
             const updateButton = event.target.closest('.update-status-btn');
             if (updateButton) {
                 event.preventDefault();
@@ -387,6 +387,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 const badge = row?.querySelector('td:nth-child(6) .badge');
                 const status = updateButton.dataset.status;
                 if (!badge || !status) return;
+                if (row.dataset.databaseOrder === 'true') {
+                    updateButton.classList.add('disabled');
+                    try {
+                        const response = await fetch('admin-orders-api.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ order_id: row.dataset.orderId, status })
+                        });
+                        const result = await response.json();
+                        if (!response.ok || !result.success) throw new Error(result.message || 'Status update failed.');
+                    } catch (error) {
+                        window.alert(error.message || 'Unable to update the order status.');
+                        updateButton.classList.remove('disabled');
+                        return;
+                    }
+                    updateButton.classList.remove('disabled');
+                }
                 badge.textContent = status;
                 badge.className = `badge ${status === 'Completed'
                     ? 'bg-success bg-opacity-10 text-success border-success'
@@ -406,8 +423,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const itemSubtotal = items.reduce((sum, item) =>
                 sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
             const subtotal = Number(button.dataset.subtotal) || itemSubtotal;
-            const vat = Math.round((subtotal + Number.EPSILON) * 12) / 100;
-            const shipping = 30;
+            const vatFromItems = items.reduce((sum, item) => {
+                const unitVat = Math.round((Number(item.price || 0) * 12 / 112 + Number.EPSILON) * 100) / 100;
+                return sum + unitVat * Number(item.quantity || 0);
+            }, 0);
+            const vat = Number(button.dataset.vat) || vatFromItems;
+            const shipping = button.dataset.shipping === undefined ? 30 : Number(button.dataset.shipping);
             document.getElementById('adminModalOrderId').textContent = cells[0].textContent.trim();
             document.getElementById('adminModalCustomerName').textContent = cells[1].textContent.trim();
             document.getElementById('adminModalCustomerContact').textContent = button.dataset.customerContact || 'Not provided';
@@ -416,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('adminModalSubtotal').textContent = money(subtotal);
             document.getElementById('adminModalVat').textContent = money(vat);
             document.getElementById('adminModalShipping').textContent = money(shipping);
-            document.getElementById('adminModalTotal').textContent = money(subtotal + vat + shipping);
+            document.getElementById('adminModalTotal').textContent = money(subtotal + shipping);
             const itemsTable = document.getElementById('adminModalItemsTable');
             itemsTable.replaceChildren();
             items.forEach(item => {
@@ -445,4 +466,58 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const orderTable = document.getElementById('adminOrdersTableBody');
+    const recentTable = document.getElementById('recentOrdersTableBody');
+    if (!orderTable && !recentTable) return;
+    try {
+        const response = await fetch('admin-orders-api.php', { cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || !result.success) return;
+        const orders = result.orders || [];
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character]);
+        const statusClass = status => status === 'Completed'
+            ? 'bg-success bg-opacity-10 text-success border-success'
+            : status === 'Cancelled' ? 'bg-danger bg-opacity-10 text-danger border-danger'
+                : 'bg-primary bg-opacity-10 text-primary border-primary';
+        const money = value => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value) || 0);
+        const makeOrdersRow = order => {
+            const row = document.createElement('tr');
+            row.dataset.orderId = String(order.order_id);
+            row.dataset.databaseOrder = 'true';
+            const paymentNames = { gcash: 'GCash', card: 'Credit / Debit Card', cod: 'Cash on Delivery / Pickup' };
+            const items = (order.items || []).map(item => ({ name: item.name, size: item.size, price: item.price, quantity: item.quantity }));
+            row.innerHTML = `<td class="ps-4 fw-semibold text-dark">#${escapeHtml(order.order_number)}</td>
+                <td class="text-dark">${escapeHtml(order.customer_name)}</td>
+                <td class="text-secondary">${escapeHtml(order.placed_at)}</td>
+                <td class="fw-semibold">${escapeHtml(money(order.total_amount))}</td>
+                <td class="text-secondary">${escapeHtml(paymentNames[order.payment_method] || order.payment_method)}</td>
+                <td><span class="badge ${statusClass(order.status)} border border-opacity-25 px-3 py-1 rounded-pill">${escapeHtml(order.status)}</span></td>
+                <td class="text-end pe-4"><div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-sm btn-outline-dark view-order-details-btn px-3 fw-semibold" data-customer-contact="${escapeHtml(order.shipping_contact)}" data-subtotal="${escapeHtml(order.subtotal)}" data-vat="${escapeHtml(order.vat_amount)}" data-shipping="${escapeHtml(order.shipping_fee)}" data-items="${escapeHtml(JSON.stringify(items))}"><i class="bi bi-eye"></i> View</button>
+                    <div class="dropdown"><button class="btn btn-sm dropdown-toggle fw-semibold text-white px-3" type="button" data-bs-toggle="dropdown">Update</button>
+                        <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item update-status-btn" href="#" data-status="Processing">Mark Processing</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Completed">Mark Completed</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Cancelled">Cancel order</a></li></ul></div>
+                </div></td>`;
+            return row;
+        };
+        if (orderTable) {
+            orderTable.replaceChildren(...orders.map(makeOrdersRow));
+            if (!orders.length) orderTable.innerHTML = '<tr><td colspan="7" class="text-center text-secondary py-4">No orders recorded yet.</td></tr>';
+        }
+        if (recentTable) {
+            const recent = orders.slice(0, 5);
+            recentTable.replaceChildren(...recent.map(order => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="ps-4 fw-semibold text-dark">#${escapeHtml(order.order_number)}</td><td class="text-dark">${escapeHtml(order.customer_name)}</td><td class="fw-semibold">${escapeHtml(money(order.total_amount))}</td><td><span class="badge ${statusClass(order.status)} border border-opacity-25 px-3 py-1 rounded-pill">${escapeHtml(order.status)}</span></td><td class="text-end pe-4"><a href="admin-order.html" class="btn btn-sm btn-outline-dark fw-semibold px-3">Review</a></td>`;
+                return row;
+            }));
+            if (!recent.length) recentTable.innerHTML = '<tr><td colspan="5" class="text-center text-secondary py-4">No recent orders recorded yet.</td></tr>';
+        }
+    } catch (error) {
+        console.error('Unable to load orders from the database.', error);
+    }
 });
