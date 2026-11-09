@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-14">
     <script>
         (function () {
             try {
@@ -34,13 +34,14 @@
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
         </a>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 ms-auto">
             <a href="login.php" class="btn btn-outline-dark px-3 fw-semibold">
                 <i class="bi bi-box-arrow-in-right me-1"></i>Log In
             </a>
             <a href="sign-up.php" class="btn btn-primary px-3 fw-semibold">
                 Get started
             </a>
+            <span id="themeToggleSlot" class="d-inline-flex align-items-center ms-1"></span>
         </div>
     </header>
 
@@ -72,13 +73,17 @@
                             </div>
                         </div>
                         <div class="col-lg-5">
-                            <div class="landing-highlight">
-                                <div class="landing-highlight-icon"><i class="bi bi-display"></i></div>
-                                <p class="text-uppercase small fw-semibold mb-2">Designed for DCI Students & Faculty</p>
-                                <h2 class="h3 fw-bold mb-3">Wear your tech pride.</h2>
-                                <p class="mb-0">Browse exclusive department merchandise, pick your favorites, and order
-                                    seamlessly online.</p>
-                                <i class="bi bi-arrow-up-right landing-highlight-arrow" aria-hidden="true"></i>
+                            <div class="department-logo-panel" aria-label="Three dimensional Department of Computing and Informatics logo">
+                                <div class="dci-logo-stage">
+                                    <div class="dci-logo-coin" id="departmentLogo">
+                                        <div class="dci-logo-face dci-logo-front">
+                                            <img src="assets/logo.png" alt="Department of Computing and Informatics seal">
+                                        </div>
+                                        <div class="dci-logo-face dci-logo-back" aria-hidden="true">
+                                            <img src="assets/logo.png" alt="">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -162,7 +167,7 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/app.js"></script>
+    <script src="backend/app.js?v=department-logo-6"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>
 

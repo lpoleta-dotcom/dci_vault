@@ -1,4 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const departmentLogo = document.getElementById('departmentLogo');
+    const landingScrollPanel = document.querySelector('.landing-page .main-control');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (departmentLogo && landingScrollPanel && !prefersReducedMotion.matches) {
+        let logoFrame = 0;
+        const syncLogoWithScroll = () => {
+            cancelAnimationFrame(logoFrame);
+            logoFrame = requestAnimationFrame(() => {
+                const rotation = landingScrollPanel.scrollTop * 0.72;
+                departmentLogo.style.setProperty('--logo-rotation', `${rotation}deg`);
+            });
+        };
+        landingScrollPanel.addEventListener('scroll', syncLogoWithScroll, { passive: true });
+        syncLogoWithScroll();
+    }
+
     document.querySelectorAll('[data-password-toggle]').forEach(button => {
         const password = document.getElementById(button.dataset.passwordToggle);
         const icon = button.querySelector('i');
@@ -17,19 +33,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const categories = document.querySelectorAll('#categoryFilter [data-category]');
     const productGrid = document.getElementById('productGrid');
     if (productGrid && categories.length) {
-        const cards = Array.from(productGrid.querySelectorAll('.product-card'));
+        let selectedCategory = 'all';
+        const applyCategory = () => productGrid.querySelectorAll('.product-card').forEach(card => {
+            const wrapper = card.closest('.col, [class*="col-"]') || card;
+            wrapper.classList.toggle('d-none', selectedCategory !== 'all' && card.dataset.category !== selectedCategory);
+        });
         categories.forEach(button => button.addEventListener('click', () => {
-            const category = button.dataset.category || 'all';
+            selectedCategory = button.dataset.category || 'all';
             categories.forEach(filter => {
                 const active = filter === button;
                 filter.classList.toggle('active', active);
                 filter.setAttribute('aria-pressed', String(active));
             });
-            cards.forEach(card => {
-                const wrapper = card.closest('.col, [class*="col-"]') || card;
-                wrapper.classList.toggle('d-none', category !== 'all' && card.dataset.category !== category);
-            });
+            applyCategory();
         }));
+
+        fetch('catalog-feed.php')
+            .then(response => {
+                if (!response.ok) throw new Error('Could not load the catalog.');
+                return response.json();
+            })
+            .then(products => {
+                productGrid.replaceChildren();
+                products.forEach(product => {
+                    const column = document.createElement('div');
+                    column.className = 'col-6 col-md-4 col-lg-3 col-xl-3';
+                    const card = document.createElement('article');
+                    card.className = 'productBox product-card landing-product-card h-100';
+                    card.dataset.category = product.category_slug;
+                    const image = document.createElement('img');
+                    image.className = 'landing-product-image';
+                    image.src = product.image_url || 'assets/product.jpg';
+                    image.alt = product.name;
+                    const info = document.createElement('div');
+                    info.className = 'landing-product-info';
+                    const category = document.createElement('span');
+                    category.className = 'landing-product-category';
+                    category.textContent = product.category_name.toUpperCase();
+                    const name = document.createElement('h3');
+                    name.className = 'productName';
+                    name.textContent = product.name;
+                    const row = document.createElement('div');
+                    row.className = 'd-flex align-items-center justify-content-between gap-2';
+                    const price = document.createElement('p');
+                    price.className = 'productPrice mb-0';
+                    price.textContent = `₱${Number(product.price).toFixed(2)}`;
+                    const link = document.createElement('a');
+                    link.href = 'login.php';
+                    link.className = 'landing-product-link';
+                    link.setAttribute('aria-label', `Log in to shop ${product.name}`);
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-arrow-up-right';
+                    link.append(icon);
+                    row.append(price, link);
+                    info.append(category, name, row);
+                    card.append(image, info);
+                    column.append(card);
+                    productGrid.append(column);
+                });
+                applyCategory();
+            })
+            .catch(() => {
+                productGrid.textContent = 'The product catalog could not be loaded.';
+            });
     }
 
     const signUpForm = document.getElementById('signUpForm');

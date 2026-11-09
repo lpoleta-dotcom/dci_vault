@@ -12,7 +12,7 @@ $catalogProducts = [];
 $catalogContains = static function ($value, $part) {
     return strpos((string) $value, (string) $part) !== false;
 };
-$productResult = $conn->query("SELECT p.product_id, p.name, p.description, p.price, c.name AS category_name, c.slug AS category_slug FROM products p LEFT JOIN categories c ON c.category_id = p.category_id WHERE p.is_active = 1 ORDER BY p.name");
+$productResult = $conn->query("SELECT p.product_id, p.name, p.description, p.price, c.name AS category_name, c.slug AS category_slug FROM products p LEFT JOIN categories c ON c.category_id = p.category_id WHERE p.is_active = 1 ORDER BY FIELD(c.slug, 'tshirt', 'bottom', 'outerwear', 'accessory'), p.name");
 if ($productResult) {
     while ($product = $productResult->fetch_assoc()) {
         $product['images'] = ['front' => '', 'back' => '', 'side' => ''];
@@ -291,7 +291,7 @@ $catalogEscape = static function ($value) {
                                             style="background-color: var(--contrast-primary, #2563EB);">Add to Cart</button>
                                         <button id="modalBuyNow" 
                                             class="btn text-white flex-grow-1 fw-semibold py-2 shadow-sm"
-                                            style="background-color: var(--primary-color, #0F172A);">Buy Now</button>
+                                            style="background-color: var(--contrast-primary, #2563EB);">Buy Now</button>
                                     </div>
                                 </div>
                             </div>

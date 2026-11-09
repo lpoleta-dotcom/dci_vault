@@ -489,6 +489,92 @@ body {
     font-size: 1.4rem;
 }
 
+.department-logo-panel {
+    display: flex;
+    width: 100%;
+    min-height: 27rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.dci-logo-stage {
+    position: relative;
+    display: grid;
+    width: 100%;
+    min-height: 27rem;
+    perspective: 1100px;
+    place-items: center;
+}
+
+.dci-logo-stage::before {
+    position: absolute;
+    width: min(92%, 28rem);
+    aspect-ratio: 1;
+    content: "";
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(111, 164, 255, 0.38), rgba(54, 105, 217, 0.17) 48%, transparent 72%);
+    filter: blur(0.65rem);
+    animation: dci-logo-aura 3.2s ease-in-out infinite;
+}
+
+.dci-logo-coin {
+    --logo-width: clamp(17rem, 32vw, 24rem);
+    --logo-height: clamp(17rem, 32vw, 24rem);
+    --logo-depth: 1rem;
+    position: relative;
+    width: var(--logo-width);
+    height: var(--logo-height);
+    transform: rotateY(var(--logo-rotation, 0deg)) rotateX(-5deg) translateZ(1.1rem);
+    transform-style: preserve-3d;
+    will-change: transform;
+    filter: drop-shadow(0 0 1rem rgba(91, 153, 255, 0.48)) drop-shadow(0 1.6rem 1.2rem rgba(0, 0, 0, 0.48));
+}
+
+.dci-logo-coin::before {
+    position: absolute;
+    inset: 1%;
+    content: "";
+    border: 0.42rem solid #d2b77c;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f0dfb4, #b08c4d 48%, #283f6c);
+    box-shadow: 0 0.15rem 0 #e0c990, 0 0.3rem 0 #b99759, 0 0.45rem 0 #806538, 0 0.6rem 0 #2b426f, 0 0.75rem 0 #1c3158, 0 0.9rem 0 #142542;
+    transform: translateZ(calc(var(--logo-depth) * -0.5));
+}
+
+.dci-logo-face {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    overflow: hidden;
+    border: 0.16rem solid #dce8ff;
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 24%, #fff, #d6e1f8 55%, #7890c2);
+    backface-visibility: hidden;
+    box-shadow: inset 0 0 1rem rgba(15, 34, 73, 0.28);
+    place-items: center;
+}
+
+.dci-logo-front { transform: translateZ(calc(var(--logo-depth) * 0.5)); }
+.dci-logo-back { transform: rotateY(180deg) translateZ(calc(var(--logo-depth) * 0.5)); }
+
+.dci-logo-face img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+@keyframes dci-logo-aura {
+    0%, 100% { opacity: 0.68; transform: scale(0.94); }
+    50% { opacity: 1; transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dci-logo-stage::before { animation: none; }
+}
+
 .landing-section-kicker {
     color: var(--landing-blue);
 }
@@ -579,8 +665,8 @@ body {
     display: grid;
     width: 2.25rem;
     height: 2.25rem;
-    color: var(--landing-blue);
-    background: #eef2ff;
+    color: #fff;
+    background: var(--landing-blue);
     border-radius: 50%;
     text-decoration: none;
     transition: var(--transition-base);
@@ -589,7 +675,7 @@ body {
 
 .landing-product-link:hover {
     color: #fff;
-    background: var(--landing-blue);
+    background: #244ed0;
     transform: translate(2px, -2px);
 }
 
@@ -612,6 +698,11 @@ body {
 @media (max-width: 767.98px) {
     .landing-hero {
         border-radius: 1.1rem;
+    }
+
+    .department-logo-panel,
+    .dci-logo-stage {
+        min-height: 22rem;
     }
 
     .landing-highlight {
@@ -2049,6 +2140,20 @@ body {
 .appearance-settings-card [data-theme-choice] {
     min-height: 2.65rem;
     font-weight: 600;
+}
+
+.customer-page .checkout-modal-header {
+    color: #fff !important;
+    background: var(--contrast-primary, #2563EB) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+.customer-page .checkout-modal-header :is(.customer-eyebrow, .modal-title) {
+    color: #fff !important;
+}
+
+.customer-page .checkout-modal-header .btn-close {
+    filter: brightness(0) invert(1);
 }
 
 .customer-page .view-order-btn,

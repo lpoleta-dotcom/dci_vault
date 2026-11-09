@@ -35,9 +35,12 @@
         button.id = 'themeToggle';
         const header = document.querySelector('.main-header');
         const profile = header?.querySelector('.user-profile');
+        const slot = document.getElementById('themeToggleSlot');
         button.className = `theme-toggle btn${header ? '' : ' theme-toggle-floating'}`;
         button.setAttribute('aria-pressed', String(initialTheme === 'dark'));
-        if (profile) {
+        if (slot) {
+            slot.append(button);
+        } else if (profile) {
             const nameBlock = profile.querySelector('div');
             if (nameBlock) profile.insertBefore(button, nameBlock);
             else profile.prepend(button);
