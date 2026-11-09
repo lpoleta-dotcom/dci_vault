@@ -11,7 +11,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('dci-vault-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+            } catch (error) {}
+        })();
+    </script>
 </head>
 
 <!-- Russian Nesting Doll Layout -->
@@ -129,7 +138,7 @@
                                 <td class="ps-4 fw-semibold text-dark">#ORD-2026-048</td>
                                 <td class="text-dark">John Doe</td>
                                 <td class="text-secondary">Oct 28, 2026</td>
-                                <td class="fw-semibold" style="color: var(--contrast-primary, #2563EB);">₱590.00</td>
+                                <td class="fw-semibold" style="color: var(--contrast-primary, #2563EB);">₱530.00</td>
                                 <td class="text-secondary">GCash</td>
                                 <td>
                                     <span
@@ -174,7 +183,7 @@
                                 <td class="ps-4 fw-semibold text-dark">#ORD-2026-047</td>
                                 <td class="text-dark">Jane Smith</td>
                                 <td class="text-secondary">Oct 27, 2026</td>
-                                <td class="fw-semibold" style="color: var(--contrast-primary, #2563EB);">₱1,262.00</td>
+                                <td class="fw-semibold" style="color: var(--contrast-primary, #2563EB);">₱1,130.00</td>
                                 <td class="text-secondary">Credit Card</td>
                                 <td>
                                     <span
@@ -289,8 +298,8 @@
                                 <span id="adminModalSubtotal" class="fw-semibold text-dark">₱500.00</span>
                             </div>
                             <div class="d-flex justify-content-between text-secondary small">
-                                <span>VAT (12%)</span>
-                                <span id="adminModalVat" class="fw-semibold text-dark">₱60.00</span>
+                                <span>VAT included in prices</span>
+                                <span id="adminModalVat" class="fw-semibold text-dark">₱53.58</span>
                             </div>
                             <div class="d-flex justify-content-between text-secondary small">
                                 <span>Shipping Fee</span>
@@ -300,7 +309,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold text-dark">Total Due</span>
                                 <span id="adminModalTotal" class="fw-bold fs-5"
-                                    style="color: var(--contrast-primary, #2563EB);">₱590.00</span>
+                                    style="color: var(--contrast-primary, #2563EB);">₱530.00</span>
                             </div>
                         </div>
                     </div>
@@ -314,8 +323,9 @@
     </div>
 
     <!-- Custom JavaScript file -->
-    <script src="backend/admin.js"></script>
+    <script src="backend/admin.js?v=vat-inclusive"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="backend/theme.js?v=6"></script>
 </body>
 
 </html>
