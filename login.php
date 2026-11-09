@@ -265,15 +265,15 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
         <div class="main-name d-flex align-items-center gap-2">
             <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border" width="40" height="40">
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
-            <span id="themeToggleSlot" class="ms-2"></span>
         </div>
 
         <!-- Navigation Action -->
-        <div class="ms-auto me-2">
+        <div class="d-flex align-items-center gap-2 ms-auto">
             <a href="index.html"
                 class="btn btn-outline-dark px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
                 <i class="bi bi-bag me-1"></i><span>Continue shopping</span>
             </a>
+            <span id="themeToggleSlot" class="d-inline-flex align-items-center ms-1"></span>
         </div>
     </header>
 

@@ -258,11 +258,12 @@ unset($_SESSION['signup_error']);
         </div>
 
         <!-- Navigation Action -->
-        <div>
+        <div class="d-flex align-items-center gap-2 ms-auto">
             <a href="index.html"
                 class="btn btn-outline-dark px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
                 <i class="bi bi-bag me-1"></i><span>Continue shopping</span>
             </a>
+            <span id="themeToggleSlot" class="d-inline-flex align-items-center ms-1"></span>
         </div>
     </header>
 
