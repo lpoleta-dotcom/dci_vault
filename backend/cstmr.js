@@ -89,10 +89,73 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
         const filters = Array.from(document.querySelectorAll('#categoryFilter [data-category]'));
         const cards = Array.from(grid.querySelectorAll('.product-card'));
+        const productImagePreviews = new WeakMap();
         cards.forEach(card => {
             const basePrice = Number(card.dataset.price || 0);
             const priceElement = card.querySelector('.productPrice');
             if (priceElement) priceElement.textContent = money(basePrice);
+
+            const image = card.querySelector('img');
+            const views = [
+                { src: card.dataset.imgFront, label: 'front' },
+                { src: card.dataset.imgBack, label: 'back' },
+                { src: card.dataset.imgSide, label: 'side' }
+            ].filter((view, index, all) =>
+                view.src && all.findIndex(candidate => candidate.src === view.src) === index);
+            if (!image || views.length < 2) return;
+
+            const availableViews = Promise.all(views.map(view => new Promise(resolve => {
+                const probe = new Image();
+                probe.onload = () => resolve(view);
+                probe.onerror = () => resolve(null);
+                probe.src = view.src;
+            }))).then(loadedViews => {
+                const validViews = loadedViews.filter(Boolean);
+                if (!image.naturalWidth) {
+                    const fallback = validViews.find(view => view.label === 'front') || validViews[0];
+                    image.src = fallback?.src || 'assets/placeholder.jpg';
+                }
+                return validViews;
+            });
+            const showView = view => {
+                image.src = view?.src || 'assets/placeholder.jpg';
+                image.alt = `${card.dataset.name || 'Product'} ${view?.label || 'front'} view`;
+            };
+            const stopPreview = () => {
+                const preview = productImagePreviews.get(card);
+                if (!preview) return;
+                window.clearTimeout(preview.timer);
+                availableViews.then(validViews => {
+                    const frontView = validViews.find(view => view.label === 'front') || validViews[0];
+                    showView(frontView);
+                });
+                productImagePreviews.delete(card);
+            };
+            card.addEventListener('mouseenter', () => {
+                if (productImagePreviews.has(card)) return;
+                const preview = { timer: 0, viewIndex: 0 };
+                productImagePreviews.set(card, preview);
+                const advancePreview = async () => {
+                    const validViews = await availableViews;
+                    if (productImagePreviews.get(card) !== preview || validViews.length < 2) return;
+                    preview.viewIndex = (preview.viewIndex + 1) % validViews.length;
+                    showView(validViews[preview.viewIndex]);
+                    preview.timer = window.setTimeout(advancePreview, 1400);
+                };
+                availableViews.then(validViews => {
+                    if (productImagePreviews.get(card) !== preview || validViews.length < 2) return;
+                    preview.viewIndex = 1 % validViews.length;
+                    showView(validViews[preview.viewIndex]);
+                    preview.timer = window.setTimeout(advancePreview, 1400);
+                });
+            });
+            card.addEventListener('mouseleave', stopPreview);
+            card.addEventListener('focusout', event => {
+                if (!card.contains(event.relatedTarget)) stopPreview();
+            });
+            card.addEventListener('focusin', () => {
+                if (!productImagePreviews.has(card)) card.dispatchEvent(new Event('mouseenter'));
+            });
         });
         filters.forEach(button => button.addEventListener('click', () => {
             const category = button.dataset.category || 'all';
@@ -124,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 image: card.dataset.imgFront || card.querySelector('img')?.getAttribute('src') || 'assets/product.jpg',
                 backImage: card.dataset.imgBack || card.dataset.imgFront || card.querySelector('img')?.getAttribute('src') || 'assets/product.jpg',
                 sideImage: card.dataset.imgSide || '',
-                sizes: (card.dataset.sizes || 'One Size').split(',').map(size => size.trim()).filter(Boolean)
+                variants: JSON.parse(card.dataset.variants || '[]')
             };
             document.getElementById('productModalName').textContent = selectedProduct.name;
             document.getElementById('productModalPrice').textContent = money(selectedProduct.price);
@@ -147,24 +210,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 return slide;
             }));
             bootstrap.Carousel.getOrCreateInstance(document.getElementById('productCarousel')).to(0);
-            sizeSelect.replaceChildren(...selectedProduct.sizes.map(size => {
+            sizeSelect.replaceChildren(...selectedProduct.variants.map(variant => {
                 const option = document.createElement('option');
-                option.value = size;
-                option.textContent = size;
+                option.value = variant.size;
+                const stock = Number(variant.stock);
+                option.textContent = stock > 0 ? `${variant.size} — ${stock} available` : `${variant.size} — Out of stock`;
+                option.disabled = stock < 1;
                 return option;
             }));
             let cart = read(keys.cart);
             if (!Array.isArray(cart)) cart = [];
-            const remainingQuantity = Math.max(0, maxOrderQuantity - cartQuantity(cart));
+            const remainingOrderQuantity = Math.max(0, maxOrderQuantity - cartQuantity(cart));
             quantityInput.value = '1';
-            quantityInput.max = String(Math.max(1, remainingQuantity));
-            document.getElementById('productAddToCart').disabled = remainingQuantity === 0;
-            document.getElementById('modalBuyNow').disabled = remainingQuantity === 0;
-            if (remainingQuantity === 0) notify('An order can contain up to 99 items. Remove items from your cart before adding more.');
+            const updateSelectionStock = () => {
+                const variant = selectedProduct.variants.find(item => item.size === sizeSelect.value);
+                const existing = cart.find(item => String(item.id) === String(selectedProduct.id) && item.size === sizeSelect.value);
+                const sizeStock = Number(variant?.stock || 0);
+                const inCart = Number(existing?.quantity || 0);
+                const available = Math.max(0, sizeStock - inCart);
+                const allowed = Math.min(available, remainingOrderQuantity);
+                quantityInput.max = String(Math.max(1, allowed));
+                quantityInput.value = '1';
+                quantityInput.disabled = allowed === 0;
+                document.getElementById('productAddToCart').disabled = allowed === 0;
+                document.getElementById('modalBuyNow').disabled = allowed === 0;
+                if (selectedProduct.variants.length === 0) notify('This product has no available sizes.');
+                else if (sizeStock === 0) notify(`${selectedProduct.name}: size ${sizeSelect.value} is out of stock.`);
+                else if (available === 0) notify(`All ${sizeStock} unit(s) in size ${sizeSelect.value} are already in your cart.`);
+                else if (remainingOrderQuantity === 0) notify('An order can contain up to 99 items. Remove items from your cart before adding more.');
+            };
+            const firstAvailable = selectedProduct.variants.find(variant => Number(variant.stock) > 0);
+            sizeSelect.value = firstAvailable?.size || selectedProduct.variants[0]?.size || '';
+            sizeSelect.disabled = selectedProduct.variants.length === 0;
+            sizeSelect.onchange = updateSelectionStock;
+            updateSelectionStock();
             modal.show();
         };
         cards.forEach(card => {
             card.addEventListener('click', event => {
+                card.dispatchEvent(new Event('mouseleave'));
                 if (event.target.closest('button.add-to-cart-btn')) {
                     event.preventDefault();
                     openProduct(card);
@@ -192,10 +276,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             quantityInput.setCustomValidity('');
-            const size = sizeSelect.value || selectedProduct.sizes[0] || 'One Size';
+            const size = sizeSelect.value || selectedProduct.variants[0]?.size || 'One Size';
             const existing = cart.find(item => String(item.id) === String(selectedProduct.id) && item.size === size);
-            if (existing) existing.quantity += quantity;
-            else cart.push({ ...selectedProduct, size, quantity });
+            const variant = selectedProduct.variants.find(item => item.size === size);
+            const available = Number(variant?.stock || 0) - Number(existing?.quantity || 0);
+            if (!variant || quantity > available) {
+                quantityInput.setCustomValidity(variant
+                    ? `Only ${Math.max(0, available)} more unit(s) are available in size ${size}.`
+                    : `Size ${size} is no longer available for ${selectedProduct.name}.`);
+                quantityInput.reportValidity();
+                return;
+            }
+            quantityInput.setCustomValidity('');
+            if (existing) {
+                existing.quantity += quantity;
+                existing.stock = Number(variant.stock);
+                existing.price = selectedProduct.price;
+            } else cart.push({ ...selectedProduct, size, quantity, stock: Number(variant.stock) });
             write(keys.cart, cart);
             modal.hide();
             notify(`${selectedProduct.name} added to your cart.`);
@@ -235,41 +332,76 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = document.getElementById('cartTableBody');
         if (!body) return;
         let cart = getInitialCart();
-            const shippingFee = 30;
+        const shippingFee = 30;
+        let inventoryReady = false;
+        const selectedItems = () => cart.filter(item => item.selectedForCheckout !== false);
         const render = () => {
             body.replaceChildren();
             cart.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.dataset.index = String(index);
-                row.innerHTML = `<td class="ps-4"><div class="fw-semibold">${escapeHtml(item.name)}</div><small class="text-muted">Product ID: ${escapeHtml(item.id)}</small></td>
+                const stock = Number(item.stock || 0);
+                const isSelected = item.selectedForCheckout !== false;
+                row.classList.toggle('is-deselected', !isSelected);
+                const stockProblem = isSelected && inventoryReady && (!item.catalogAvailable || Number(item.quantity) > stock);
+                let stockLabel = `Product ID: ${escapeHtml(item.id)}`;
+                if (inventoryReady && !item.catalogAvailable) stockLabel = `Size ${escapeHtml(item.size)} is no longer available`;
+                else if (inventoryReady && stock === 0) stockLabel = `Size ${escapeHtml(item.size)} is out of stock`;
+                else if (inventoryReady && Number(item.quantity) > stock) {
+                    stockLabel = `Only ${stock} left in size ${escapeHtml(item.size)}; cart has ${Number(item.quantity)}`;
+                } else if (inventoryReady) {
+                    stockLabel = `${stock} available in size ${escapeHtml(item.size)}`;
+                }
+                const maxQuantity = Math.min(stock || 1, maxOrderQuantity - (cartQuantity(cart) - Number(item.quantity || 0)));
+                row.innerHTML = `<td class="ps-3"><input type="checkbox" class="form-check-input m-0 cart-item-select" ${isSelected ? 'checked' : ''} aria-label="Select ${escapeHtml(item.name)} size ${escapeHtml(item.size)}"></td>
+                    <td><div class="fw-semibold">${escapeHtml(item.name)}</div><small class="${stockProblem ? 'text-danger' : 'text-muted'}">${stockLabel}</small></td>
                     <td>${escapeHtml(item.size)}</td><td>${money(item.price)}</td>
-                    <td><input type="number" class="form-control form-control-sm shadow-none item-qty" value="${Math.max(1, Number(item.quantity) || 1)}" min="1" max="${Math.max(1, maxOrderQuantity - (cartQuantity(cart) - Number(item.quantity || 0)))}" aria-label="Quantity for ${escapeHtml(item.name)}" style="width:70px"></td>
+                    <td><input type="number" class="form-control form-control-sm shadow-none item-qty" value="${Math.max(1, Number(item.quantity) || 1)}" min="1" max="${Math.max(1, maxQuantity)}" aria-label="Quantity for ${escapeHtml(item.name)}" style="width:70px" ${inventoryReady ? '' : 'disabled'}></td>
                     <td class="fw-semibold item-subtotal">${money(item.price * item.quantity)}</td>
                     <td class="text-end pe-4"><button type="button" class="btn btn-sm text-danger remove-item-btn" aria-label="Remove ${escapeHtml(item.name)}"><i class="bi bi-x-lg" aria-hidden="true"></i></button></td>`;
                 body.append(row);
             });
             if (!cart.length) {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td class="text-center text-secondary py-5" colspan="6">Your cart is empty. Browse products to add something you love.</td>';
+                row.innerHTML = '<td class="text-center text-secondary py-5" colspan="7">Your cart is empty. Browse products to add something you love.</td>';
                 body.append(row);
             }
-            const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
-            const vat = calculateCartVat(cart);
+            const selected = selectedItems();
+            const selectedQuantity = cartQuantity(selected);
+            const subtotal = selected.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+            const vat = calculateCartVat(selected);
             document.getElementById('summarySubtotal').textContent = money(subtotal);
             document.getElementById('summaryVat').textContent = money(vat);
-            document.getElementById('summaryShip').textContent = money(cart.length ? shippingFee : 0);
-            document.getElementById('summaryTotal').textContent = money(subtotal + (cart.length ? shippingFee : 0));
+            document.getElementById('summaryShip').textContent = money(selected.length ? shippingFee : 0);
+            document.getElementById('summaryTotal').textContent = money(subtotal + (selected.length ? shippingFee : 0));
+            document.getElementById('summarySelectedCount').textContent = `${selected.length} item${selected.length === 1 ? '' : 's'} · ${selectedQuantity} unit${selectedQuantity === 1 ? '' : 's'}`;
+            document.getElementById('selectedItemsSummary').classList.toggle('d-none', selected.length === 0);
+            const selectAll = document.getElementById('selectAllCartItems');
+            if (selectAll) {
+                selectAll.checked = cart.length > 0 && selected.length === cart.length;
+                selectAll.indeterminate = selected.length > 0 && selected.length < cart.length;
+                selectAll.disabled = cart.length === 0;
+            }
             const emptyButton = document.getElementById('clearCartBtn');
             const orderButton = document.getElementById('placeOrderBtn');
             if (emptyButton) emptyButton.disabled = cart.length === 0;
-            const totalQuantity = cartQuantity(cart);
-            if (orderButton) orderButton.disabled = cart.length === 0 || totalQuantity > maxOrderQuantity;
+            const stockProblems = selected.some(item => !item.catalogAvailable || Number(item.quantity) > Number(item.stock || 0));
+            if (orderButton) {
+                orderButton.disabled = selected.length > 0 && (selectedQuantity > maxOrderQuantity || !inventoryReady || stockProblems);
+                orderButton.textContent = 'Proceed to Checkout';
+            }
             const quantityHint = document.getElementById('quantityLimitHint');
             if (quantityHint) {
-                quantityHint.textContent = totalQuantity > maxOrderQuantity
-                    ? `Your cart has ${totalQuantity} items. Reduce it to 99 or fewer to continue.`
-                    : `${totalQuantity} of ${maxOrderQuantity} items in this order.`;
-                quantityHint.classList.toggle('text-danger', totalQuantity > maxOrderQuantity);
+                quantityHint.textContent = cart.length === 0
+                    ? 'Your cart is empty.'
+                    : selected.length === 0
+                    ? 'Select at least one item to checkout.'
+                    : selectedQuantity > maxOrderQuantity
+                        ? `Selected items total ${selectedQuantity}. Reduce the order to ${maxOrderQuantity} units or fewer.`
+                    : stockProblems
+                        ? 'Update the selected unavailable items or deselect them before checkout.'
+                        : inventoryReady ? `${selected.length} selected · ${selectedQuantity} of ${maxOrderQuantity} units in this order.` : 'Checking live product availability…';
+                quantityHint.classList.toggle('text-danger', selectedQuantity > maxOrderQuantity || stockProblems);
             }
         };
         const save = () => {
@@ -277,15 +409,25 @@ document.addEventListener('DOMContentLoaded', () => {
             render();
         };
         body.addEventListener('change', event => {
+            const checkbox = event.target.closest('.cart-item-select');
+            if (checkbox) {
+                const item = cart[Number(checkbox.closest('tr').dataset.index)];
+                if (!item) return;
+                item.selectedForCheckout = checkbox.checked;
+                save();
+                return;
+            }
             const input = event.target.closest('.item-qty');
             if (!input) return;
             const row = input.closest('tr');
             const item = cart[Number(row.dataset.index)];
             const quantity = Number(input.value);
             const otherQuantity = cartQuantity(cart) - Number(item.quantity || 0);
-            if (!Number.isSafeInteger(quantity) || quantity < 1 || otherQuantity + quantity > maxOrderQuantity) {
+            if (!Number.isSafeInteger(quantity) || quantity < 1 || otherQuantity + quantity > maxOrderQuantity || quantity > Number(item.stock || 0)) {
                 input.value = String(item.quantity);
-                input.setCustomValidity(otherQuantity + quantity > maxOrderQuantity
+                input.setCustomValidity(quantity > Number(item.stock || 0)
+                    ? `Only ${Number(item.stock || 0)} of this size are available.`
+                    : otherQuantity + quantity > maxOrderQuantity
                     ? `This order can contain up to ${maxOrderQuantity} items total.`
                     : 'Choose a positive whole-number quantity.');
                 input.reportValidity();
@@ -293,6 +435,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             input.setCustomValidity('');
             item.quantity = quantity;
+            save();
+        });
+        document.getElementById('selectAllCartItems')?.addEventListener('change', event => {
+            cart.forEach(item => { item.selectedForCheckout = event.target.checked; });
             save();
         });
         body.addEventListener('input', event => {
@@ -309,6 +455,32 @@ document.addEventListener('DOMContentLoaded', () => {
             cart = [];
             save();
         });
+        const refreshInventory = async () => {
+            const response = await fetch('catalog-feed.php', { cache: 'no-store' });
+            const products = await response.json();
+            if (!response.ok || !Array.isArray(products)) {
+                throw new Error(products.message || 'Unable to refresh product availability.');
+            }
+            const productsById = new Map(products.map(product => [String(product.product_id), product]));
+            cart = cart.map(item => {
+                const product = productsById.get(String(item.id));
+                const variant = product?.variants.find(candidate => candidate.size === item.size);
+                return {
+                    ...item,
+                    name: product?.name || item.name,
+                    price: product ? Number(product.price) : item.price,
+                    image: product?.image_url || item.image,
+                    stock: Number(variant?.stock || 0),
+                    catalogAvailable: Boolean(product && variant)
+                };
+            });
+            inventoryReady = true;
+            save();
+        };
+        refreshInventory().catch(error => {
+            notify(error.message || 'Unable to check live product availability.');
+            render();
+        });
 
         const placeOrderButton = document.getElementById('placeOrderBtn');
         const confirmation = document.getElementById('confirmOrderModal');
@@ -324,11 +496,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             placeOrderButton.addEventListener('click', () => {
                 if (!cart.length) {
-                    notify('Your cart is empty.');
+                    notify('Your cart is empty. Please add products before checking out.');
                     return;
                 }
-                if (cartQuantity(cart) > maxOrderQuantity) {
-                    notify(`An order can contain up to ${maxOrderQuantity} items total. Reduce your cart quantity first.`);
+                const checkoutCart = selectedItems();
+                if (!checkoutCart.length) {
+                    notify('Please select items you wish to checkout.');
+                    return;
+                }
+                if (!inventoryReady) {
+                    notify('Wait for live product availability to finish checking before checkout.');
+                    return;
+                }
+                const stockProblem = checkoutCart.find(item => !item.catalogAvailable || Number(item.quantity) > Number(item.stock || 0));
+                if (stockProblem) {
+                    const stock = Number(stockProblem.stock || 0);
+                    notify(!stockProblem.catalogAvailable
+                        ? `Size ${stockProblem.size} is no longer available for ${stockProblem.name}.`
+                        : stock === 0
+                            ? `${stockProblem.name} is out of stock in size ${stockProblem.size}.`
+                            : `Only ${stock} available for ${stockProblem.name} in size ${stockProblem.size}; your cart requests ${stockProblem.quantity}.`);
+                    return;
+                }
+                if (cartQuantity(checkoutCart) > maxOrderQuantity) {
+                    notify(`An order can contain up to ${maxOrderQuantity} items total. Reduce selected quantities first.`);
                     return;
                 }
                 pendingOrder = null;
@@ -340,13 +531,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmButton.disabled = false;
                 confirmButton.innerHTML = '<i class="bi bi-bag-check me-1"></i>Confirm &amp; Place Order';
 
-                const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                const vat = calculateCartVat(cart);
+                const subtotal = checkoutCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const vat = calculateCartVat(checkoutCart);
                 const shipping = shippingFee;
                 const paymentSelect = document.getElementById('paymentMethod');
                 const itemsContainer = document.getElementById('checkoutItems');
                 itemsContainer.replaceChildren();
-                cart.forEach(item => {
+                checkoutCart.forEach(item => {
                     const itemRow = document.createElement('div');
                     itemRow.className = 'd-flex justify-content-between align-items-start gap-3';
                     itemRow.innerHTML = `<div><div class="fw-semibold text-dark">${escapeHtml(item.name)}</div><div class="small text-secondary">Size: ${escapeHtml(item.size)} · Qty: ${Number(item.quantity)}</div></div><span class="fw-semibold text-nowrap">${money(item.price * item.quantity)}</span>`;
@@ -366,39 +557,54 @@ document.addEventListener('DOMContentLoaded', () => {
                     vat,
                     shipping,
                     total: subtotal + shipping,
-                    items: cart.map(item => ({ ...item }))
+                    items: checkoutCart.map(item => ({ ...item }))
                 };
                 confirmationModal.show();
             });
             confirmButton.addEventListener('click', async () => {
-                if (!pendingOrder || !cart.length) {
+                if (!pendingOrder || !pendingOrder.items.length) {
                     notify('Your cart changed. Review the current cart before placing the order.');
                     confirmationModal.hide();
                     return;
                 }
+                const checkedOutKeys = new Set(pendingOrder.items.map(item => `${item.id}:${item.size}`));
                 confirmButton.disabled = true;
                 confirmButton.textContent = 'Saving order…';
                 try {
                     const response = await fetch('checkout-order.php', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                        },
                         body: JSON.stringify({
                             payment_method: document.getElementById('paymentMethod')?.value || 'gcash',
-                            items: cart.map(item => ({ id: item.id, size: item.size, quantity: item.quantity }))
+                            items: pendingOrder.items.map(item => ({ id: item.id, size: item.size, quantity: item.quantity }))
                         })
                     });
                     const result = await response.json();
-                    if (!response.ok || !result.success) throw new Error(result.message || 'The order could not be saved.');
+                    if (!response.ok || !result.success) {
+                        const error = new Error(result.message || 'The order could not be saved.');
+                        error.status = response.status;
+                        throw error;
+                    }
                     pendingOrder = result.order;
                 } catch (error) {
                     console.error('Unable to save order to the database.', error);
+                    if (error.status === 409) {
+                        try {
+                            await refreshInventory();
+                        } catch (refreshError) {
+                            console.error('Unable to refresh inventory after checkout validation failed.', refreshError);
+                        }
+                    }
                     notify(error.message || 'The order could not be saved. Your cart is unchanged.');
                     confirmButton.disabled = false;
                     confirmButton.innerHTML = '<i class="bi bi-bag-check me-1"></i>Confirm &amp; Place Order';
                     return;
                 }
                 document.getElementById('checkoutOrderId').textContent = pendingOrder.id;
-                cart = [];
+                cart = cart.filter(item => !checkedOutKeys.has(`${item.id}:${item.size}`));
                 save();
                 title.textContent = 'Order confirmed';
                 review.classList.add('d-none');
@@ -435,6 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('article');
             card.className = 'card border-0 shadow-sm p-4 bg-white';
             card.dataset.status = order.status;
+            card.dataset.orderId = String(order.order_id);
             const preview = order.items?.[0];
             const orderLabel = String(order.id).startsWith('ORD-') ? order.id : `ORD-2026-${String(order.id).padStart(3, '0')}`;
             card.innerHTML = `<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
@@ -541,8 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupAccount() {
         const accountForm = document.getElementById('accountForm');
-        if (accountForm?.dataset.serverManaged === 'true') return;
-        if (accountForm) {
+        if (accountForm && accountForm.dataset.serverManaged !== 'true') {
             syncProfile();
             accountForm.addEventListener('submit', event => {
                 event.preventDefault();
@@ -569,102 +775,209 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         const avatarInput = document.getElementById('accountAvatarInput');
-        avatarInput?.addEventListener('change', () => {
-            const file = avatarInput.files?.[0];
-            if (!file) return;
-            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                avatarInput.value = '';
-                notify('Choose a JPG, PNG, or WebP image.');
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                avatarInput.value = '';
-                notify('Choose an image smaller than 5 MB.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.addEventListener('error', () => {
-                avatarInput.value = '';
-                notify('The selected image could not be read.');
-            }, { once: true });
-            reader.addEventListener('load', () => {
-                const image = new Image();
-                image.addEventListener('error', () => {
+        const avatarForm = document.getElementById('avatarForm');
+        const cropModalElement = document.getElementById('avatarCropModal');
+        const cropCanvas = document.getElementById('avatarCropCanvas');
+        const zoomInput = document.getElementById('avatarZoom');
+        const saveCropButton = document.getElementById('avatarCropSaveBtn');
+        const rotateButton = document.getElementById('avatarRotateBtn');
+        const selectedFileLabel = document.getElementById('accountAvatarFileName');
+        if (avatarInput && avatarForm && cropModalElement && cropCanvas && zoomInput && saveCropButton && rotateButton && window.bootstrap) {
+            const cropModal = bootstrap.Modal.getOrCreateInstance(cropModalElement);
+            const cropContext = cropCanvas.getContext('2d');
+            let cropImage = null;
+            let imageUrl = '';
+            let zoom = 1;
+            let rotation = 0;
+            let offsetX = 0;
+            let offsetY = 0;
+            let dragStart = null;
+            let submittingCrop = false;
+            const cropSize = cropCanvas.width;
+
+            const releaseCropImage = () => {
+                if (imageUrl) URL.revokeObjectURL(imageUrl);
+                imageUrl = '';
+                cropImage = null;
+                dragStart = null;
+                offsetX = 0;
+                offsetY = 0;
+                zoom = 1;
+                rotation = 0;
+                zoomInput.value = '1';
+                cropContext?.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+            };
+            const drawCropPreview = () => {
+                if (!cropContext || !cropImage) return;
+                const quarterTurn = Math.abs(Math.round(rotation / (Math.PI / 2))) % 2 === 1;
+                const rotatedWidth = quarterTurn ? cropImage.naturalHeight : cropImage.naturalWidth;
+                const rotatedHeight = quarterTurn ? cropImage.naturalWidth : cropImage.naturalHeight;
+                const scale = Math.max(cropSize / rotatedWidth, cropSize / rotatedHeight) * zoom;
+                const displayWidth = cropImage.naturalWidth * scale;
+                const displayHeight = cropImage.naturalHeight * scale;
+                const boundsWidth = quarterTurn ? displayHeight : displayWidth;
+                const boundsHeight = quarterTurn ? displayWidth : displayHeight;
+                const maxOffsetX = Math.max(0, (boundsWidth - cropSize) / 2);
+                const maxOffsetY = Math.max(0, (boundsHeight - cropSize) / 2);
+                offsetX = Math.min(maxOffsetX, Math.max(-maxOffsetX, offsetX));
+                offsetY = Math.min(maxOffsetY, Math.max(-maxOffsetY, offsetY));
+                cropContext.clearRect(0, 0, cropSize, cropSize);
+                cropContext.save();
+                cropContext.translate(cropSize / 2 + offsetX, cropSize / 2 + offsetY);
+                cropContext.rotate(rotation);
+                cropContext.drawImage(cropImage, -displayWidth / 2, -displayHeight / 2, displayWidth, displayHeight);
+                cropContext.restore();
+            };
+
+            avatarInput.addEventListener('change', () => {
+                const file = avatarInput.files?.[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
                     avatarInput.value = '';
+                    selectedFileLabel?.classList.add('d-none');
+                    notify('Choose a JPG, PNG, or WebP image.');
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    avatarInput.value = '';
+                    selectedFileLabel?.classList.add('d-none');
+                    notify('Choose an image smaller than 5 MB.');
+                    return;
+                }
+                if (selectedFileLabel) {
+                    selectedFileLabel.textContent = file.name;
+                    selectedFileLabel.classList.remove('d-none');
+                }
+                releaseCropImage();
+                imageUrl = URL.createObjectURL(file);
+                cropImage = new Image();
+                cropImage.addEventListener('error', () => {
+                    avatarInput.value = '';
+                    selectedFileLabel?.classList.add('d-none');
+                    releaseCropImage();
                     notify('The selected file is not a valid image.');
                 }, { once: true });
-                image.addEventListener('load', () => {
-                    const canvas = document.createElement('canvas');
-                    const size = 320;
-                    canvas.width = size;
-                    canvas.height = size;
-                    const context = canvas.getContext('2d');
-                    if (!context) {
-                        avatarInput.value = '';
-                        notify('Your browser could not process this image.');
-                        return;
-                    }
-                    const cropSize = Math.min(image.naturalWidth, image.naturalHeight);
-                    const sourceX = (image.naturalWidth - cropSize) / 2;
-                    const sourceY = (image.naturalHeight - cropSize) / 2;
-                    context.drawImage(image, sourceX, sourceY, cropSize, cropSize, 0, 0, size, size);
-                    const profile = read(keys.profile) || {};
-                    profile.avatar = canvas.toDataURL('image/jpeg', 0.82);
-                    try {
-                        write(keys.profile, profile);
-                    } catch (error) {
-                        console.error('Unable to save the profile photo in browser storage.', error);
-                        avatarInput.value = '';
-                        notify('The photo could not be saved in this browser. Try a smaller image.');
-                        return;
-                    }
-                    syncAvatar(profile);
-                    notify('Profile photo updated.');
+                cropImage.addEventListener('load', () => {
+                    zoom = 1;
+                    rotation = 0;
+                    zoomInput.value = '1';
+                    drawCropPreview();
+                    cropModal.show();
                 }, { once: true });
-                image.src = String(reader.result);
-            }, { once: true });
-            reader.readAsDataURL(file);
-        });
-        document.getElementById('removeAvatarBtn')?.addEventListener('click', () => {
-            const profile = read(keys.profile) || {};
-            delete profile.avatar;
-            try {
-                write(keys.profile, profile);
-            } catch (error) {
-                console.error('Unable to remove the profile photo from browser storage.', error);
-                notify('The photo could not be removed from this browser.');
-                return;
-            }
-            avatarInput.value = '';
-            syncAvatar(profile);
-            notify('Profile photo removed.');
+                cropImage.src = imageUrl;
+            });
+            zoomInput.addEventListener('input', () => {
+                zoom = Number(zoomInput.value) || 1;
+                drawCropPreview();
+            });
+            rotateButton.addEventListener('click', () => {
+                rotation = (rotation + Math.PI / 2) % (Math.PI * 2);
+                drawCropPreview();
+            });
+            cropCanvas.addEventListener('pointerdown', event => {
+                if (!cropImage) return;
+                dragStart = { x: event.clientX, y: event.clientY, offsetX, offsetY };
+                cropCanvas.setPointerCapture(event.pointerId);
+            });
+            cropCanvas.addEventListener('pointermove', event => {
+                if (!dragStart) return;
+                const bounds = cropCanvas.getBoundingClientRect();
+                offsetX = dragStart.offsetX + (event.clientX - dragStart.x) * cropSize / bounds.width;
+                offsetY = dragStart.offsetY + (event.clientY - dragStart.y) * cropSize / bounds.height;
+                drawCropPreview();
+            });
+            const stopCropDrag = () => { dragStart = null; };
+            cropCanvas.addEventListener('pointerup', stopCropDrag);
+            cropCanvas.addEventListener('pointercancel', stopCropDrag);
+            saveCropButton.addEventListener('click', () => {
+                if (!cropImage || !cropContext) {
+                    notify('Choose a photo before saving.');
+                    return;
+                }
+                saveCropButton.disabled = true;
+                cropCanvas.toBlob(blob => {
+                    saveCropButton.disabled = false;
+                    if (!blob) {
+                        notify('Your browser could not prepare this photo. Try another image.');
+                        return;
+                    }
+                    try {
+                        const croppedFile = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
+                        const transfer = new DataTransfer();
+                        transfer.items.add(croppedFile);
+                        avatarInput.files = transfer.files;
+                    } catch (error) {
+                        console.error('Unable to prepare the cropped profile photo for upload.', error);
+                        notify('Unable to prepare the cropped photo for upload. Try another browser.');
+                        return;
+                    }
+                    submittingCrop = true;
+                    cropModal.hide();
+                    avatarForm.requestSubmit();
+                }, 'image/jpeg', 0.88);
+            });
+            cropModalElement.addEventListener('hidden.bs.modal', () => {
+                if (!submittingCrop) {
+                    avatarInput.value = '';
+                    selectedFileLabel?.classList.add('d-none');
+                }
+                releaseCropImage();
+            });
+        } else if (avatarInput) {
+            avatarInput.addEventListener('change', () => {
+                avatarInput.value = '';
+                selectedFileLabel?.classList.add('d-none');
+                notify('The photo editor could not be opened. Refresh the page and try again.');
+            });
+        }
+        const removeAvatarForm = document.getElementById('removeAvatarForm');
+        if (removeAvatarForm && removeAvatarForm.dataset.serverManaged !== 'true') {
+            document.getElementById('removeAvatarBtn')?.addEventListener('click', () => {
+                const profile = read(keys.profile) || {};
+                delete profile.avatar;
+                try {
+                    write(keys.profile, profile);
+                } catch (error) {
+                    console.error('Unable to remove the profile photo from browser storage.', error);
+                    notify('The photo could not be removed from this browser.');
+                    return;
+                }
+                if (avatarInput) avatarInput.value = '';
+                syncAvatar(profile);
+                notify('Profile photo removed.');
+            });
+        }
+        removeAvatarForm?.addEventListener('submit', event => {
+            if (!window.confirm('Remove your current profile photo?')) event.preventDefault();
         });
         const passwordForm = document.getElementById('passwordForm');
-        passwordForm?.querySelectorAll('input').forEach(input => input.addEventListener('input', () => input.setCustomValidity('')));
-        passwordForm?.addEventListener('submit', event => {
-            event.preventDefault();
-            const current = document.getElementById('currentPassword');
-            const next = document.getElementById('newPassword');
-            const confirm = document.getElementById('confirmPassword');
-            if (!current.value || !next.value || !confirm.value) {
-                notify('Complete all password fields before continuing.');
-                return;
-            }
-            if (next.value.length < 8) {
-                next.setCustomValidity('Use at least 8 characters for the new password.');
-                next.reportValidity();
-                return;
-            }
-            next.setCustomValidity('');
-            if (next.value !== confirm.value) {
-                confirm.setCustomValidity('The new passwords do not match.');
-                confirm.reportValidity();
-                return;
-            }
-            confirm.setCustomValidity('');
-            notify('Password changes require the account server and are not saved in this prototype.');
-            passwordForm.reset();
-        });
+        if (passwordForm && passwordForm.dataset.serverManaged !== 'true') {
+            passwordForm.querySelectorAll('input').forEach(input => input.addEventListener('input', () => input.setCustomValidity('')));
+            passwordForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const current = document.getElementById('currentPassword');
+                const next = document.getElementById('newPassword');
+                const confirm = document.getElementById('confirmPassword');
+                if (!current.value || !next.value || !confirm.value) {
+                    notify('Complete all password fields before continuing.');
+                    return;
+                }
+                if (next.value.length < 8) {
+                    next.setCustomValidity('Use at least 8 characters for the new password.');
+                    next.reportValidity();
+                    return;
+                }
+                next.setCustomValidity('');
+                if (next.value !== confirm.value) {
+                    confirm.setCustomValidity('The new passwords do not match.');
+                    confirm.reportValidity();
+                    return;
+                }
+                confirm.setCustomValidity('');
+                notify('Password changes require the account server and are not saved in this prototype.');
+                passwordForm.reset();
+            });
+        }
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
             sessionStorage.removeItem('tindatrack.session');
         });

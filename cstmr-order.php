@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <link rel="stylesheet" href="style/style.css?v=customer-nav-3">
     <script>
         (function () {
             try {
@@ -32,7 +32,9 @@
         
         <!-- Brand Logo / Title -->
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
+            </a>
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
         </div>
 
@@ -52,21 +54,21 @@
             </a>
         </nav>
 
-        <!-- Customer Profile / Account Section & Logout -->
-        <div class="d-flex align-items-center gap-3">
-            <div class="user-profile d-flex align-items-center gap-2">
-                <div class="d-flex flex-column text-end lh-sm">
-                    <a id="userName" data-session-managed="true" class="mb-0 fs-6 fw-bold text-decoration-none text-dark" href="cstmr-account.php"><?php echo $customerEscape($customerHeaderUsername); ?></a>
-                    <small id="userStatus" class="text-secondary">Active Shopper</small>
-                </div>
-                <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="User Avatar" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
-            </div>
+        <?php $notificationRole = 'customer'; require __DIR__ . DIRECTORY_SEPARATOR . 'notification-widget.php'; ?>
 
-            <!-- Logout Button Icon / Link -->
-            <a id="logoutBtn" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 px-2 py-1" href="logout.php" title="Log Out">
-                <i class="bi bi-box-arrow-right fs-6"></i>
-                <span class="d-none d-lg-inline">Log Out</span>
-            </a>
+        <div class="customer-header-actions d-flex align-items-center gap-2">
+            <div class="dropdown">
+                <button class="customer-profile-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile menu">
+                    <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
+                    <span id="userName" data-session-managed="true" class="customer-profile-name"><?php echo $customerEscape($customerHeaderUsername); ?></span>
+                    <i class="bi bi-chevron-down customer-profile-chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end customer-profile-menu">
+                    <li><a class="dropdown-item" href="cstmr-account.php"><i class="bi bi-person me-2" aria-hidden="true"></i>View Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a id="logoutBtn" class="dropdown-item customer-logout-item" href="logout.php"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Log Out</a></li>
+                </ul>
+            </div>
         </div>
     </header>
 
@@ -256,7 +258,7 @@
     </div>
 
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=order-max-99"></script>
+    <script src="backend/cstmr.js?v=notification-targets-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>
