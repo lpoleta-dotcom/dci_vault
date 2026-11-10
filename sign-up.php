@@ -9,6 +9,21 @@ if ($authCsrfToken === '') {
     $_SESSION['auth_csrf_token'] = $authCsrfToken;
 }
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+
+if (!empty($_SESSION['user_id'])) {
+    if ((int) ($_SESSION['position'] ?? 0) === 2) {
+        header('Location: admin-dashboard.php');
+        exit();
+    } elseif ((int) ($_SESSION['position'] ?? 0) === 1) {
+        header('Location: cstmr-prod.php');
+        exit();
+    }
+}
+
 $signupError = $_SESSION['signup_error'] ?? '';
 unset($_SESSION['signup_error']);
 ?>
@@ -26,6 +41,18 @@ unset($_SESSION['signup_error']);
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <script>
+        window.addEventListener('pageshow', function (event) {
+            var perfEntries = window.performance && typeof window.performance.getEntriesByType === 'function'
+                ? window.performance.getEntriesByType('navigation')
+                : null;
+            var isBackForward = (perfEntries && perfEntries[0] && perfEntries[0].type === 'back_forward')
+                || (window.performance && window.performance.navigation && window.performance.navigation.type === 2);
+            if (event.persisted || isBackForward) {
+                window.location.reload();
+            }
+        });
+    </script>
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -258,10 +285,11 @@ unset($_SESSION['signup_error']);
         style="min-height: 65px;">
 
         <!-- Brand Logo / Title -->
-        <div class="main-name d-flex align-items-center gap-2">
+        <a class="main-name d-flex align-items-center gap-2 text-decoration-none" href="index.html"
+            aria-label="DCI Vault home">
             <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border" width="40" height="40">
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
-        </div>
+        </a>
 
         <!-- Navigation Action -->
         <div class="d-flex align-items-center gap-2 ms-auto">
@@ -298,7 +326,7 @@ unset($_SESSION['signup_error']);
                                     <div class="collection-tile d-flex flex-column justify-content-between p-3">
                                         <span class="collection-icon"><i class="bi bi-person-standing"
                                                 aria-hidden="true"></i></span>
-                                        <span class="small fw-semibold">T-Shirts</span>
+                                        <span class="small fw-semibold">Tops</span>
                                     </div>
                                 </div>
                                 <div class="col-4">
@@ -337,7 +365,7 @@ unset($_SESSION['signup_error']);
                     </div>
 
                     <!-- Form Fields -->
-                    <form id="signUpForm" action="account.php" method="post">
+                    <form id="signUpForm" action="account.php" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="auth_csrf_token" value="<?php echo htmlspecialchars($authCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                         <!-- Full Name -->
@@ -427,6 +455,13 @@ unset($_SESSION['signup_error']);
                             <div class="form-text text-danger small text-start mt-1" id="new-confirmPwVerify"></div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="idDocumentInput" class="form-label small fw-semibold text-secondary">Photo of a valid ID</label>
+                            <input type="file" class="form-control shadow-none" id="idDocumentInput" name="id_document"
+                                accept="image/jpeg,image/png,image/webp" aria-describedby="idDocumentHelp" required>
+                            <div id="idDocumentHelp" class="form-text">Upload a clear JPG, PNG, or WebP image (up to 5 MB). An administrator must approve it before Cash on Delivery is available.</div>
+                        </div>
+
                         <!-- General Response Message Target -->
                         <div class="text-danger small mb-3 text-center" id="new-resInput" role="alert" aria-live="polite"><?php
                             echo htmlspecialchars($signupError, ENT_QUOTES, 'UTF-8');
@@ -454,7 +489,7 @@ unset($_SESSION['signup_error']);
         </div>
 
         <script src="backend/app.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

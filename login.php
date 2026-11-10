@@ -10,12 +10,18 @@ if ($authCsrfToken === '') {
 }
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
-header('Expires: 0');
+header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
 
-if (!empty($_SESSION['user_id']) && (int) ($_SESSION['position'] ?? 0) === 1) {
-    header('Location: cstmr-prod.php');
-    exit();
+if (!empty($_SESSION['user_id'])) {
+    if ((int) ($_SESSION['position'] ?? 0) === 2) {
+        header('Location: admin-dashboard.php');
+        exit();
+    } elseif ((int) ($_SESSION['position'] ?? 0) === 1) {
+        header('Location: cstmr-prod.php');
+        exit();
+    }
 }
 
 $loginError = '';
@@ -42,6 +48,22 @@ $adminLoginRequired = ($_GET['error'] ?? '') === 'admin_login_required';
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <script>
+        window.addEventListener('pageshow', function (event) {
+            var perfEntries = window.performance && typeof window.performance.getEntriesByType === 'function'
+                ? window.performance.getEntriesByType('navigation')
+                : null;
+            var isBackForward = (perfEntries && perfEntries[0] && perfEntries[0].type === 'back_forward')
+                || (window.performance && window.performance.navigation && window.performance.navigation.type === 2);
+            if (event.persisted || isBackForward) {
+                var loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.reset();
+                }
+                window.location.replace(window.location.href);
+            }
+        });
+    </script>
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -274,10 +296,11 @@ $adminLoginRequired = ($_GET['error'] ?? '') === 'admin_login_required';
         style="min-height: 65px;">
 
         <!-- Brand Logo / Title -->
-        <div class="main-name d-flex align-items-center gap-2">
+        <a class="main-name d-flex align-items-center gap-2 text-decoration-none" href="index.html"
+            aria-label="DCI Vault home">
             <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border" width="40" height="40">
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
-        </div>
+        </a>
 
         <!-- Navigation Action -->
         <div class="d-flex align-items-center gap-2 ms-auto">
@@ -386,7 +409,7 @@ $adminLoginRequired = ($_GET['error'] ?? '') === 'admin_login_required';
 
     <script src="backend/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

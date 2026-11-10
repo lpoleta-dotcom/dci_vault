@@ -15,7 +15,7 @@ $adminName = htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8');
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=admin-nav-2">
+    <link rel="stylesheet" href="style/style.css?v=admin-theme-3">
     <script>
         (function () {
             try {
@@ -35,8 +35,13 @@ $adminName = htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8');
     <header
         class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 bg-white border-bottom">
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
-            <span class="fw-bold fs-5 text-dark">DCI Vault <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+            <a href="admin-dashboard.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
+            </a>
+            <a href="admin-dashboard.php" class="text-decoration-none">
+                <span class="fw-bold fs-5 text-dark">DCI Vault <span
+                        class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+            </a>
         </div>
 
         <div class="admin-header-actions">
@@ -111,6 +116,22 @@ $adminName = htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8');
                 </button>
             </div>
 
+            <div class="nav nav-pills admin-product-category-filter mb-3" id="adminProductCategoryFilter"
+                role="group" aria-label="Filter products by category">
+                <button type="button" class="nav-link active" data-product-category="all"
+                    data-product-status="active" aria-pressed="true">All Active</button>
+                <button type="button" class="nav-link" data-product-category="tshirt"
+                    data-product-status="active" aria-pressed="false">Tops</button>
+                <button type="button" class="nav-link" data-product-category="bottom"
+                    data-product-status="active" aria-pressed="false">Bottom</button>
+                <button type="button" class="nav-link" data-product-category="outerwear"
+                    data-product-status="active" aria-pressed="false">Outerwear</button>
+                <button type="button" class="nav-link" data-product-category="accessory"
+                    data-product-status="active" aria-pressed="false">Accessories</button>
+                <button type="button" class="nav-link" data-product-category="all" data-product-status="archived"
+                    aria-pressed="false">Archived</button>
+            </div>
+
             <!-- Products Table Container -->
             <div class="card border-0 shadow-sm flex-grow-1 overflow-hidden bg-white"
                 style="border-radius: var(--prod-rd, 0.75rem);">
@@ -161,10 +182,10 @@ $adminName = htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8');
                                     <label class="form-label small fw-semibold text-secondary">Category</label>
                                     <select class="form-select shadow-none" id="productCategoryInput" required>
                                         <option value="" selected disabled>Select category</option>
-                                        <option value="tshirt">T-Shirt</option>
+                                        <option value="tshirt">Tops</option>
                                         <option value="bottom">Bottom</option>
                                         <option value="outerwear">Outerwear</option>
-                                        <option value="accessory">Accessory</option>
+                                        <option value="accessory">Accessories</option>
                                     </select>
                                 </div>
                             </div>
@@ -246,10 +267,33 @@ $adminName = htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8');
             </div>
         </div>
 
+        <div class="modal fade" id="archiveProductModal" tabindex="-1" aria-labelledby="archiveProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-bottom px-4 py-3">
+                        <h5 class="modal-title fw-bold text-dark" id="archiveProductModalLabel">Archive product?</h5>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body px-4 py-4">
+                        <p class="mb-0">This product will no longer be available to customers.</p>
+                        <p class="small text-secondary mt-2 mb-0" id="archiveProductName"></p>
+                    </div>
+                    <div class="modal-footer border-top px-4 py-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-4"
+                            data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger btn-sm px-4" id="confirmArchiveProductBtn">
+                            <i class="bi bi-archive me-1" aria-hidden="true"></i>Archive product
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Custom JavaScript file -->
-        <script src="backend/admin.js?v=notification-targets-1"></script>
+        <script src="backend/admin.js?v=product-archive-workflow-1"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

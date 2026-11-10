@@ -79,13 +79,25 @@ if (!ensureNotificationTables($conn)) {
     checkoutRespond(500, ['success' => false, 'message' => 'Checkout is temporarily unavailable. Please try again.']);
 }
 $userId = (int) $_SESSION['user_id'];
-$userStmt = $conn->prepare('SELECT first_name, middle_name, last_name, contact_no, street, barangay, city, province, postal FROM users WHERE user_id = ? AND position = 1 AND is_active = 1');
+$userStmt = $conn->prepare(
+    'SELECT first_name, middle_name, last_name, contact_no, street, barangay, city, province, postal,
+            verification_status
+     FROM users WHERE user_id = ? AND position = 1 AND is_active = 1'
+);
 if (!$userStmt) checkoutRespond(500, ['success' => false, 'message' => 'Unable to prepare customer lookup.']);
 $userStmt->bind_param('i', $userId);
 if (!$userStmt->execute()) checkoutRespond(500, ['success' => false, 'message' => 'Unable to load your account details.']);
 $customer = $userStmt->get_result()->fetch_assoc();
 $userStmt->close();
 if (!$customer) checkoutRespond(401, ['success' => false, 'message' => 'Customer account was not found.']);
+if ($paymentMethod === 'cod' && $customer['verification_status'] !== 'Approved') {
+    checkoutRespond(403, [
+        'success' => false,
+        'message' => $customer['verification_status'] === 'Rejected'
+            ? 'Cash on Delivery is unavailable because your ID was not approved. Submit a replacement ID or choose another payment method.'
+            : 'Cash on Delivery is unavailable until an administrator approves your ID. Choose another payment method for now.'
+    ]);
+}
 
 $shippingName = trim(implode(' ', array_filter([
     $customer['first_name'], $customer['middle_name'], $customer['last_name']

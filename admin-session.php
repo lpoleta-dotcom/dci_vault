@@ -1,12 +1,21 @@
 <?php
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'admin-session-init.php';
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+
 $adminSessionUserId = filter_var(
     $_SESSION['user_id'] ?? null,
     FILTER_VALIDATE_INT,
     ['options' => ['min_range' => 1]]
 );
 if ($adminSessionUserId === false || $adminSessionUserId === null || (int) ($_SESSION['position'] ?? 0) !== 2) {
+    $_SESSION = [];
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_destroy();
+    }
     header('Location: admin-login.php');
     exit();
 }
@@ -34,7 +43,4 @@ if (!$adminSessionUser || (int) $adminSessionUser['position'] !== 2 || (int) $ad
     exit();
 }
 $adminSessionName = trim($adminSessionUser['first_name'] . ' ' . $adminSessionUser['last_name']);
-
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
 ?>

@@ -8,12 +8,18 @@ if (!is_string($adminCsrfToken) || $adminCsrfToken === '') {
 }
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
-header('Expires: 0');
+header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
 
-if ((int) ($_SESSION['position'] ?? 0) === 2) {
-    header('Location: admin-dashboard.php');
-    exit();
+if (!empty($_SESSION['user_id'])) {
+    if ((int) ($_SESSION['position'] ?? 0) === 2) {
+        header('Location: admin-dashboard.php');
+        exit();
+    } elseif ((int) ($_SESSION['position'] ?? 0) === 1) {
+        header('Location: cstmr-prod.php');
+        exit();
+    }
 }
 
 $loginError = '';
@@ -101,8 +107,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>DCI Vault | Admin Sign In</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style/style.css?v=admin-signin-1">
+    <link rel="stylesheet" href="style/style.css?v=admin-theme-4">
     <script>
+        window.addEventListener('pageshow', function (event) {
+            var perfEntries = window.performance && typeof window.performance.getEntriesByType === 'function'
+                ? window.performance.getEntriesByType('navigation')
+                : null;
+            var isBackForward = (perfEntries && perfEntries[0] && perfEntries[0].type === 'back_forward')
+                || (window.performance && window.performance.navigation && window.performance.navigation.type === 2);
+            if (event.persisted || isBackForward) {
+                var loginForm = document.querySelector('.admin-login-form');
+                if (loginForm) {
+                    loginForm.reset();
+                }
+                window.location.replace(window.location.href);
+            }
+        });
         (function () {
             try {
                 var saved = localStorage.getItem('dci-vault-theme');
@@ -115,13 +135,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body class="admin-login-page min-vh-100 d-flex flex-column">
     <header class="main-header admin-login-header">
-        <a class="admin-login-brand" href="index.html" aria-label="DCI Vault home">
+        <a class="admin-login-brand" href="admin-login.php" aria-label="DCI Vault home">
             <img src="assets/logo.png" alt="" width="42" height="42">
-            <span>DCI <strong>Vault</strong></span>
-        </a>
-        <a href="login.php" class="admin-login-guest">
-            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
-            <span>Customer sign in</span>
+            <span>DCI Vault</span>
         </a>
     </header>
 
@@ -165,12 +181,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="admin-login-submit">
                     <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
                     <span>Sign In to Admin</span>
-                    <i class="bi bi-arrow-right" aria-hidden="true"></i>
                 </button>
             </form>
 
-            <div class="admin-login-divider"><span>or</span></div>
-            <p class="admin-login-security">
+            <p class="mt-4 admin-login-security">
                 <i class="bi bi-shield-fill-check" aria-hidden="true"></i>
                 <span>Admin access is restricted to authorized administrator accounts.</span>
             </p>
@@ -178,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script src="backend/app.js?v=admin-password-toggle-1"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

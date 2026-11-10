@@ -228,18 +228,58 @@ document.addEventListener('DOMContentLoaded', function () {
     const productModalElement = document.getElementById('productModal');
     if (productModalElement) {
         const productModal = new bootstrap.Modal(productModalElement);
+        const archiveModalElement = document.getElementById('archiveProductModal');
+        const archiveModal = archiveModalElement ? bootstrap.Modal.getOrCreateInstance(archiveModalElement) : null;
+        const archiveProductName = document.getElementById('archiveProductName');
+        const confirmArchiveProductBtn = document.getElementById('confirmArchiveProductBtn');
         const modalTitle = document.getElementById('productModalLabel');
         const saveProductBtn = document.getElementById('saveProductBtn');
         const productForm = document.getElementById('productForm');
         const productsTableBody = document.getElementById('productsTableBody');
+        const productCategoryFilters = Array.from(document.querySelectorAll('#adminProductCategoryFilter [data-product-category]'));
         const stockInputs = document.getElementById('variantStockInputs');
         const productsById = new Map();
         let editingProductId = null;
         let adminCsrfToken = '';
+        let selectedProductCategory = 'all';
+        let selectedProductStatus = 'active';
+        let pendingArchiveProduct = null;
+        let productEmptyState;
         const escapeValue = value => String(value).replace(/[&<>"']/g, character => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         })[character]);
         const selectedVariants = new Map();
+
+        const filterProducts = () => {
+            const rows = Array.from(productsTableBody.querySelectorAll('tr[data-product-id]'));
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const visible = row.dataset.productActive === String(selectedProductStatus === 'active') &&
+                    (selectedProductCategory === 'all' || row.dataset.productCategory === selectedProductCategory);
+                row.classList.toggle('d-none', !visible);
+                if (visible) visibleCount += 1;
+            });
+            if (productEmptyState) {
+                productEmptyState.classList.toggle('d-none', visibleCount > 0);
+                productEmptyState.querySelector('td').textContent = rows.length === 0
+                    ? 'No products in the catalog.'
+                    : selectedProductStatus === 'archived'
+                        ? 'No archived products.'
+                        : selectedProductCategory === 'all'
+                            ? 'No active products.'
+                            : 'No active products in this category.';
+            }
+        };
+        productCategoryFilters.forEach(button => button.addEventListener('click', () => {
+            selectedProductCategory = button.dataset.productCategory || 'all';
+            selectedProductStatus = button.dataset.productStatus || 'active';
+            productCategoryFilters.forEach(filter => {
+                const selected = filter === button;
+                filter.classList.toggle('active', selected);
+                filter.setAttribute('aria-pressed', String(selected));
+            });
+            filterProducts();
+        }));
 
         const syncStockInputs = () => {
             const selectedSizes = Array.from(document.querySelectorAll('.product-size-checkbox:checked'))
@@ -275,21 +315,26 @@ document.addEventListener('DOMContentLoaded', function () {
             checkbox.addEventListener('change', syncStockInputs));
 
         const inventoryLabel = product => product.variants.length
-            ? product.variants.map(variant => variant.stock > 0
-                ? `<span data-size-stock="${escapeValue(variant.size)}">${escapeValue(variant.size)}: ${variant.stock} available</span>`
-                : `<span data-size-stock="${escapeValue(variant.size)}">${escapeValue(variant.size)}: Out of stock</span>`).join(', ')
-            : 'No sizes';
+            ? product.variants.map(variant => `<span class="product-stock-badge ${variant.stock > 0 ? 'is-available' : 'is-empty'}" data-size-stock="${escapeValue(variant.size)}">
+                <strong>${escapeValue(variant.size)}</strong>
+                <span>${variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}</span>
+            </span>`).join('')
+            : '<span class="product-stock-empty">No sizes configured</span>';
         const renderProductRow = product => {
             const row = document.createElement('tr');
             row.dataset.productId = String(product.id);
+            row.dataset.productCategory = product.category_slug;
+            row.dataset.productActive = String(product.active);
             if (!product.active) row.classList.add('table-secondary');
             const totalStock = product.variants.reduce((total, variant) => total + variant.stock, 0);
             row.innerHTML = `<td class="ps-4"><div class="d-flex align-items-center gap-3"><img src="${escapeValue(product.images.front || 'assets/placeholder.jpg')}" alt="${escapeValue(product.name)} front view" class="rounded object-fit-cover shadow-sm" width="45" height="45"><div><div class="fw-semibold text-dark">${escapeValue(product.name)}</div><small class="text-muted">${escapeValue(product.description || '')}</small></div></div></td>
                 <td class="text-secondary">${escapeValue(product.id)}</td>
                 <td><span class="badge bg-secondary bg-opacity-10 text-dark px-2 py-1">${escapeValue(product.category)}</span><div><small class="${product.active ? 'text-success' : 'text-danger'}">${product.active ? 'Active' : 'Archived'}</small></div></td>
                 <td class="fw-semibold" style="color:var(--contrast-primary,#2563EB)">₱${Number(product.price).toFixed(2)}</td>
-                <td><small class="product-size-stock-list">${inventoryLabel(product)}</small><div class="text-secondary small">${totalStock} total</div></td>
-                <td class="text-end pe-4"><div class="d-flex justify-content-end gap-1"><button type="button" class="btn btn-sm btn-outline-dark edit-product-btn px-2 py-1" data-product-id="${escapeValue(product.id)}" aria-label="Edit ${escapeValue(product.name)}"><i class="bi bi-pencil"></i></button><button type="button" class="btn btn-sm btn-outline-danger delete-product-btn px-2 py-1" data-product-id="${escapeValue(product.id)}" aria-label="${product.active ? 'Archive' : 'Already archived'} ${escapeValue(product.name)}" ${product.active ? '' : 'disabled'}><i class="bi bi-archive"></i></button></div></td>`;
+                <td><div class="product-size-stock-list">${inventoryLabel(product)}</div><div class="product-stock-total">${totalStock} total</div></td>
+                <td class="text-end pe-4"><div class="d-flex justify-content-end gap-1">${product.active
+                    ? `<button type="button" class="btn btn-sm btn-outline-dark edit-product-btn px-2 py-1" data-product-id="${escapeValue(product.id)}" aria-label="Edit ${escapeValue(product.name)}"><i class="bi bi-pencil"></i></button><button type="button" class="btn btn-sm btn-outline-danger delete-product-btn px-2 py-1" data-product-id="${escapeValue(product.id)}" aria-label="Archive ${escapeValue(product.name)}"><i class="bi bi-archive"></i></button>`
+                    : `<button type="button" class="btn btn-sm btn-outline-dark edit-product-btn px-2 py-1" data-product-id="${escapeValue(product.id)}" aria-label="Editing disabled for archived ${escapeValue(product.name)}" disabled><i class="bi bi-pencil"></i></button><button type="button" class="btn btn-sm btn-outline-success restore-product-btn px-2 py-1" data-product-id="${escapeValue(product.id)}" aria-label="Unarchive ${escapeValue(product.name)}"><i class="bi bi-arrow-counterclockwise"></i><span class="ms-1">Unarchive</span></button>`}</div></td>`;
             return row;
         };
         const loadProducts = async () => {
@@ -301,12 +346,11 @@ document.addEventListener('DOMContentLoaded', function () {
             productsById.clear();
             result.products.forEach(product => productsById.set(String(product.id), product));
             const rows = result.products.map(renderProductRow);
-            if (!rows.length) {
-                const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="6" class="text-center text-secondary py-4">No products in the catalog.</td>';
-                rows.push(row);
-            }
-            productsTableBody.replaceChildren(...rows);
+            productEmptyState = document.createElement('tr');
+            productEmptyState.classList.add('d-none');
+            productEmptyState.innerHTML = '<td colspan="6" class="text-center text-secondary py-4"></td>';
+            productsTableBody.replaceChildren(...rows, productEmptyState);
+            filterProducts();
         };
         const resetProductForm = () => {
             productForm.reset();
@@ -419,11 +463,50 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         });
 
-        productsTableBody.addEventListener('click', async event => {
+        productsTableBody.addEventListener('click', event => {
             const button = event.target.closest('.delete-product-btn');
             if (!button || button.disabled) return;
             const product = productsById.get(button.dataset.productId);
-            if (!product || !window.confirm(`Archive ${product.name}? It will no longer be available to customers.`)) return;
+            if (!product || !archiveModal || !archiveProductName) return;
+            pendingArchiveProduct = { product, button };
+            archiveProductName.textContent = product.name;
+            archiveModal.show();
+        });
+
+        productsTableBody.addEventListener('click', async event => {
+            const button = event.target.closest('.restore-product-btn');
+            if (!button || button.disabled) return;
+            const product = productsById.get(button.dataset.productId);
+            if (!product || product.active) return;
+            button.disabled = true;
+            const formData = new FormData();
+            formData.append('action', 'restore');
+            formData.append('product_id', String(product.id));
+            try {
+                const response = await fetch('admin-products-api.php', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': adminCsrfToken },
+                    body: formData
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Unable to unarchive product.');
+                await loadProducts();
+            } catch (error) {
+                window.alert(error.message || 'Unable to unarchive product.');
+                button.disabled = false;
+            }
+        });
+
+        archiveModalElement?.addEventListener('hidden.bs.modal', () => {
+            pendingArchiveProduct = null;
+            archiveProductName.textContent = '';
+            confirmArchiveProductBtn.disabled = false;
+        });
+
+        confirmArchiveProductBtn?.addEventListener('click', async () => {
+            if (!pendingArchiveProduct || confirmArchiveProductBtn.disabled) return;
+            const { product, button } = pendingArchiveProduct;
+            confirmArchiveProductBtn.disabled = true;
             button.disabled = true;
             const formData = new FormData();
             formData.append('action', 'delete');
@@ -437,9 +520,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.message || 'Unable to archive product.');
                 await loadProducts();
+                archiveModal.hide();
             } catch (error) {
                 window.alert(error.message || 'Unable to archive product.');
                 button.disabled = false;
+                confirmArchiveProductBtn.disabled = false;
             }
         });
 
@@ -454,6 +539,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const adminModalElement = document.getElementById('adminOrderDetailsModal');
     if (adminModalElement) {
         const adminOrderModal = new bootstrap.Modal(adminModalElement);
+        const statusErrorModalElement = document.getElementById('adminOrderStatusErrorModal');
+        const statusErrorModal = statusErrorModalElement
+            ? bootstrap.Modal.getOrCreateInstance(statusErrorModalElement)
+            : null;
         const currency = new Intl.NumberFormat('en-PH', {
             style: 'currency',
             currency: 'PHP',
@@ -506,7 +595,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         const result = await response.json();
                         if (!response.ok || !result.success) throw new Error(result.message || 'Status update failed.');
                     } catch (error) {
-                        window.alert(error.message || 'Unable to update the order status.');
+                        const message = error.message || 'Unable to update the order status.';
+                        const errorMessage = document.getElementById('adminOrderStatusErrorMessage');
+                        if (statusErrorModal && errorMessage) {
+                            errorMessage.textContent = message;
+                            statusErrorModal.show();
+                        } else {
+                            console.error(message);
+                        }
                         updateButton.classList.remove('disabled');
                         return;
                     }
@@ -611,7 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><span class="badge ${statusClass(order.status)} border border-opacity-25 px-3 py-1 rounded-pill">${escapeHtml(order.status)}</span></td>
                 <td class="text-end pe-4"><div class="d-flex justify-content-end gap-2">
                     <button class="btn btn-sm btn-outline-dark view-order-details-btn px-3 fw-semibold" data-customer-name="${escapeHtml(order.customer_name)}" data-customer-contact="${escapeHtml(order.shipping_contact)}" data-subtotal="${escapeHtml(order.subtotal)}" data-vat="${escapeHtml(order.vat_amount)}" data-shipping="${escapeHtml(order.shipping_fee)}" data-total="${escapeHtml(order.total_amount)}" data-items="${escapeHtml(JSON.stringify(items))}"><i class="bi bi-eye"></i> View</button>
-                    <div class="dropdown"><button class="btn btn-sm dropdown-toggle fw-semibold text-white px-3" type="button" data-bs-toggle="dropdown">Update</button>
+                    <div class="dropdown"><button class="btn btn-sm btn-outline-primary dropdown-toggle fw-semibold px-3" type="button" data-bs-toggle="dropdown">Update</button>
                         <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item update-status-btn" href="#" data-status="Processing">Mark Processing</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Completed">Mark Completed</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Cancelled">Cancel order</a></li></ul></div>
                 </div></td>`;
             return row;

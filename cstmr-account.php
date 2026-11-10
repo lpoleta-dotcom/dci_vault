@@ -1,10 +1,12 @@
 <?php
 require_once 'customer-session.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'id-verification.php';
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);
 
 $customerStmt = $conn->prepare(
-    'SELECT first_name, middle_name, last_name, username, contact_no, street, barangay, city, province, postal, password
+    'SELECT first_name, middle_name, last_name, username, contact_no, street, barangay, city, province, postal, password,
+            verification_status, id_document
      FROM users WHERE user_id = ?'
 );
 if ($customerStmt === false) {
@@ -175,6 +177,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
             }
+        } elseif ($action === 'upload_id_document') {
+            if ($customer['verification_status'] === 'Approved') {
+                $accountError = 'Your ID is already approved. Contact support if you need to update your verification.';
+            } elseif (
+                $customer['verification_status'] === 'Pending' &&
+                !empty($customer['id_document'])
+            ) {
+                $accountError = 'Your ID has already been submitted and is awaiting admin review. You can submit another photo if your ID is rejected.';
+            } else {
+                $idDocumentFilename = storeVerificationIdUpload($_FILES['id_document'] ?? null, $idUploadError);
+                if ($idDocumentFilename === false) {
+                    $accountError = $idUploadError;
+                } else {
+                    $verificationStmt = $conn->prepare(
+                        'UPDATE users
+                         SET id_document = ?, verification_status = \'Pending\'
+                         WHERE user_id = ? AND position = 1 AND is_active = 1
+                           AND (id_document IS NULL OR id_document = \'\' OR verification_status = \'Rejected\')'
+                    );
+                    if ($verificationStmt === false) {
+                        error_log('Customer ID verification update prepare failed: ' . $conn->error);
+                        deleteVerificationIdUpload($idDocumentFilename);
+                        $accountError = 'Unable to submit your ID for review right now. Please try again.';
+                    } else {
+                        $verificationStmt->bind_param('si', $idDocumentFilename, $userId);
+                        if (!$verificationStmt->execute()) {
+                            error_log('Customer ID verification update failed: ' . $verificationStmt->error);
+                            deleteVerificationIdUpload($idDocumentFilename);
+                            $accountError = 'Unable to submit your ID for review right now. Please try again.';
+                        } elseif ($verificationStmt->affected_rows !== 1) {
+                            deleteVerificationIdUpload($idDocumentFilename);
+                            $accountError = 'Your ID has already been submitted and is awaiting admin review. You can submit another photo if your ID is rejected.';
+                        } else {
+                            $oldIdDocument = $customer['id_document'] ?? '';
+                            if ($oldIdDocument !== '' && !deleteVerificationIdUpload($oldIdDocument)) {
+                                error_log('Unable to remove the replaced customer ID verification image.');
+                            }
+                            $verificationStmt->close();
+                            header('Location: cstmr-account.php?updated=id_verification');
+                            exit();
+                        }
+                        $verificationStmt->close();
+                    }
+                }
+            }
         } elseif ($action === 'upload_avatar') {
             $upload = $_FILES['avatar'] ?? null;
             if (
@@ -306,7 +353,8 @@ $updatedMessages = [
     'profile' => 'Account details saved.',
     'avatar' => 'Profile photo updated.',
     'avatar_removed' => 'Profile photo removed.',
-    'password' => 'Password updated.'
+    'password' => 'Password updated.',
+    'id_verification' => 'Your ID was submitted for review. Cash on Delivery will be available after approval.'
 ];
 $accountMessage = $updatedMessages[$_GET['updated'] ?? ''] ?? '';
 $escape = function ($value) {
@@ -351,7 +399,9 @@ $escape = function ($value) {
             <a class="text-decoration-none" href="cstmr-prod.php">
                 <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
             </a>
+            <a class="text-decoration-none" href="cstmr-prod.php">
                 <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            </a>
         </div>
 
         <!-- Top Navigation Links (Aligned to DCI Tech Blue Palette) -->
@@ -443,6 +493,43 @@ $escape = function ($value) {
 
                 <!-- Right Column: Personal Details & Password Form -->
                 <div class="col-lg-8">
+
+                    <div class="card customer-card border-0 shadow-sm p-4 mb-4" style="border-radius: var(--prod-rd, 1rem);">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+                            <div>
+                                <h5 class="fw-bold mb-2">Cash on Delivery ID Verification</h5>
+                                <p class="text-secondary mb-2">
+                                    Status:
+                                    <span class="badge <?php echo $customer['verification_status'] === 'Approved' ? 'bg-success' : ($customer['verification_status'] === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark'); ?>">
+                                        <?php echo $escape($customer['verification_status']); ?>
+                                    </span>
+                                </p>
+                                <?php if ($customer['verification_status'] === 'Approved'): ?>
+                                    <p class="small text-secondary mb-0">Your ID is approved. Cash on Delivery is available at checkout.</p>
+                                <?php elseif ($customer['verification_status'] === 'Rejected'): ?>
+                                    <p class="small text-secondary mb-0">Your ID could not be verified. Submit a clear replacement photo to request another review.</p>
+                                <?php elseif (!empty($customer['id_document'])): ?>
+                                    <p class="small text-secondary mb-0">Your ID has been submitted and is awaiting admin review. You cannot upload another photo while it is under review. Cash on Delivery is unavailable until approval.</p>
+                                <?php else: ?>
+                                    <p class="small text-secondary mb-0">No ID photo has been submitted yet. Upload a clear photo of a valid ID to begin verification. Cash on Delivery is unavailable until your ID is approved.</p>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (
+                                $customer['verification_status'] !== 'Approved' &&
+                                ($customer['verification_status'] === 'Rejected' || empty($customer['id_document']))
+                            ): ?>
+                                <form action="cstmr-account.php" method="post" enctype="multipart/form-data" class="flex-grow-1" style="max-width: 420px;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $escape($csrfToken); ?>">
+                                    <input type="hidden" name="account_action" value="upload_id_document">
+                                    <label for="idDocumentInput" class="form-label small fw-semibold">Valid ID photo</label>
+                                    <input type="file" class="form-control" id="idDocumentInput" name="id_document"
+                                        accept="image/jpeg,image/png,image/webp" aria-describedby="idDocumentHelp" required>
+                                    <div id="idDocumentHelp" class="form-text">JPG, PNG, or WebP; maximum 5 MB.</div>
+                                    <button type="submit" class="btn btn-primary btn-sm mt-2">Submit ID for review</button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
 
                     <!-- Personal Information Card -->
                     <div class="card customer-card border-0 shadow-sm p-4 mb-4" style="border-radius: var(--prod-rd, 1rem);">
@@ -624,7 +711,7 @@ $escape = function ($value) {
     <script src="backend/app.js?v=password-visibility-1"></script>
     <script src="backend/cstmr.js?v=profile-crop-2"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

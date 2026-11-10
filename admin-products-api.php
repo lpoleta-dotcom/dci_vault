@@ -112,47 +112,86 @@ if ($action === 'delete') {
     if (!$conn->begin_transaction()) {
         adminProductsRespond(500, ['success' => false, 'message' => 'Unable to start product deactivation.']);
     }
-    $productStmt = $conn->prepare('UPDATE products SET is_active = 0 WHERE product_id = ?');
-    $variantStmt = $conn->prepare('UPDATE product_variants SET is_active = 0 WHERE product_id = ?');
-    if (!$productStmt || !$variantStmt) {
+    $productStmt = $conn->prepare('UPDATE products SET is_active = 0 WHERE product_id = ? AND is_active = 1');
+    if (!$productStmt) {
         $conn->rollback();
         adminProductsRespond(500, ['success' => false, 'message' => 'Unable to prepare product deactivation.']);
     }
     $productStmt->bind_param('i', $productId);
-    $variantStmt->bind_param('i', $productId);
     if (!$productStmt->execute() || $productStmt->affected_rows === 0) {
         $productStmt->close();
-        $variantStmt->close();
         $conn->rollback();
         adminProductsRespond(404, ['success' => false, 'message' => 'Product was not found or is already inactive.']);
-    }
-    if (!$variantStmt->execute()) {
-        $productStmt->close();
-        $variantStmt->close();
-        $conn->rollback();
-        adminProductsRespond(500, ['success' => false, 'message' => 'Unable to deactivate product inventory.']);
     }
     $alertResetStmt = $conn->prepare('UPDATE product_size_stock_alerts SET is_low_stock = 0 WHERE product_id = ?');
     if (!$alertResetStmt) {
         $productStmt->close();
-        $variantStmt->close();
         $conn->rollback();
         adminProductsRespond(500, ['success' => false, 'message' => 'Unable to reset product stock alerts.']);
     }
     $alertResetStmt->bind_param('i', $productId);
     if (!$alertResetStmt->execute()) {
         $productStmt->close();
-        $variantStmt->close();
         $alertResetStmt->close();
         $conn->rollback();
         adminProductsRespond(500, ['success' => false, 'message' => 'Unable to reset product stock alerts.']);
     }
     $alertResetStmt->close();
     $productStmt->close();
-    $variantStmt->close();
     if (!$conn->commit()) {
         $conn->rollback();
         adminProductsRespond(500, ['success' => false, 'message' => 'Unable to complete product deactivation.']);
+    }
+    adminProductsRespond(200, ['success' => true]);
+}
+if ($action === 'restore') {
+    $productId = filter_var($_POST['product_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($productId === false) adminProductsRespond(400, ['success' => false, 'message' => 'Choose a valid product.']);
+    if (!$conn->begin_transaction()) {
+        adminProductsRespond(500, ['success' => false, 'message' => 'Unable to start product restoration.']);
+    }
+    $productStmt = $conn->prepare('UPDATE products SET is_active = 1 WHERE product_id = ? AND is_active = 0');
+    $activeVariantsStmt = $conn->prepare(
+        'SELECT variant_id FROM product_variants WHERE product_id = ? AND is_active = 1 FOR UPDATE'
+    );
+    $variantStmt = $conn->prepare('UPDATE product_variants SET is_active = 1 WHERE product_id = ?');
+    if (!$productStmt || !$activeVariantsStmt || !$variantStmt) {
+        $conn->rollback();
+        adminProductsRespond(500, ['success' => false, 'message' => 'Unable to prepare product restoration.']);
+    }
+    $productStmt->bind_param('i', $productId);
+    if (!$productStmt->execute() || $productStmt->affected_rows === 0) {
+        $productStmt->close();
+        $activeVariantsStmt->close();
+        $variantStmt->close();
+        $conn->rollback();
+        adminProductsRespond(404, ['success' => false, 'message' => 'Archived product was not found.']);
+    }
+    $activeVariantsStmt->bind_param('i', $productId);
+    if (!$activeVariantsStmt->execute()) {
+        $productStmt->close();
+        $activeVariantsStmt->close();
+        $variantStmt->close();
+        $conn->rollback();
+        adminProductsRespond(500, ['success' => false, 'message' => 'Unable to inspect product inventory.']);
+    }
+    $activeVariantResult = $activeVariantsStmt->get_result();
+    $hasActiveVariants = $activeVariantResult && $activeVariantResult->num_rows > 0;
+    $activeVariantsStmt->close();
+    if (!$hasActiveVariants) {
+        $variantStmt->bind_param('i', $productId);
+        if (!$variantStmt->execute()) {
+            $productStmt->close();
+            $variantStmt->close();
+            $conn->rollback();
+            adminProductsRespond(500, ['success' => false, 'message' => 'Unable to restore product inventory.']);
+        }
+    }
+    $productStmt->close();
+    $variantStmt->close();
+    if (!$conn->commit()) {
+        $conn->rollback();
+        adminProductsRespond(500, ['success' => false, 'message' => 'Unable to complete product restoration.']);
     }
     adminProductsRespond(200, ['success' => true]);
 }
@@ -185,7 +224,7 @@ if (
 $name = trim($payload['name']);
 $description = trim($payload['description']);
 $categorySlug = $payload['category'];
-$categoryIds = ['tshirt' => 'T-Shirt', 'bottom' => 'Bottom', 'outerwear' => 'Outerwear', 'accessory' => 'Accessory'];
+$categoryIds = ['tshirt' => 'Tops', 'bottom' => 'Bottom', 'outerwear' => 'Outerwear', 'accessory' => 'Accessories'];
 $priceText = trim((string) $payload['price']);
 if ($name === '' || strlen($name) > 150) adminProductsRespond(400, ['success' => false, 'message' => 'Product name is required and must be 150 characters or fewer.']);
 if (strlen($description) > 2000) adminProductsRespond(400, ['success' => false, 'message' => 'Product description must be 2,000 characters or fewer.']);
@@ -247,6 +286,9 @@ if ($productId) {
     $current = $currentStmt->get_result()->fetch_assoc();
     $currentStmt->close();
     if (!$current) adminProductsRespond(404, ['success' => false, 'message' => 'Product was not found.']);
+    if ((int) $current['is_active'] !== 1) {
+        adminProductsRespond(409, ['success' => false, 'message' => 'Unarchive this product before editing it.']);
+    }
     $imageStmt = $conn->prepare('SELECT view_label, image_url FROM product_images WHERE product_id = ?');
     if (!$imageStmt) adminProductsRespond(500, ['success' => false, 'message' => 'Unable to load product images.']);
     $imageStmt->bind_param('i', $productId);

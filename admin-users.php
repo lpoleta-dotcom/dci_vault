@@ -1,16 +1,3 @@
-<?php
-/* ==========================================================================
-   PHP INJECTION: Session Check & User Accounts Retrieval
-   - Verify admin login session.
-   - Fetch registered users and admins from MySQL database.
-   ========================================================================== */
-// session_start();
-// include 'db_connect.php';
-// if (!isset($_SESSION['user_id']) || $_SESSION['user_position'] != 2) {
-//     header('Location: login.php');
-//     exit();
-// }
-?>
 <?php require_once __DIR__ . DIRECTORY_SEPARATOR . 'admin-session.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -25,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=admin-nav-2">
+    <link rel="stylesheet" href="style/style.css?v=admin-theme-3">
     <script>
         (function () {
             try {
@@ -42,8 +29,13 @@
     <!-- HEADER CONTAINER -->
 <header class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 bg-white border-bottom">
     <div class="main-name d-flex align-items-center gap-2">
-        <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
-<span class="fw-bold fs-5 text-dark">DCI Vault <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>    </div>
+        <a href="admin-dashboard.php">
+            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
+        </a>
+        <a href="admin-dashboard.php" class="text-decoration-none">
+            <span class="fw-bold fs-5 text-dark">DCI Vault <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+        </a>
+    </div>
 
     <div class="admin-header-actions">
         <!-- Administrator Profile Section -->
@@ -120,6 +112,8 @@
                             data-role-filter="1">Customers <span id="customerAccountCount" class="badge bg-light text-dark ms-1">0</span></button>
                         <button class="nav-link" type="button" aria-pressed="false"
                             data-role-filter="inactive">Deactivated <span id="inactiveAccountCount" class="badge bg-light text-dark ms-1">0</span></button>
+                        <button class="nav-link" type="button" aria-pressed="false"
+                            data-role-filter="verification-pending">Pending ID Verification <span id="pendingVerificationCount" class="badge bg-light text-dark ms-1">0</span></button>
                     </div>
                 </div>
                 <div class="table-responsive flex-grow-1 m-0">
@@ -133,17 +127,69 @@
                                 <th>Orders</th>
                                 <th style="width: 160px;">Role</th>
                                 <th>Account status</th>
+                                <th>ID verification</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
-                            <tr><td colspan="8" class="text-center text-secondary py-4">Loading accounts…</td></tr>
+                            <tr><td colspan="9" class="text-center text-secondary py-4">Loading accounts…</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
         </main>
+    </div>
+
+    <div class="modal fade" id="idDocumentModal" tabindex="-1" aria-labelledby="idDocumentModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5 fw-bold" id="idDocumentModalTitle">Customer ID submission</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="idDocumentPreview" class="img-fluid rounded" alt="Submitted customer ID" style="max-height: 70vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="accountStatusModal" tabindex="-1" aria-labelledby="accountStatusModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5 fw-bold" id="accountStatusModalTitle">Deactivate account?</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="accountStatusModalMessage" class="mb-0">Their order history will be preserved.</p>
+                    <p id="accountStatusError" class="text-danger small mt-3 mb-0" role="alert" aria-live="polite"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="accountStatusCancel" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="accountStatusConfirm" class="btn btn-danger">Deactivate account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="customerPromotionModal" tabindex="-1" aria-labelledby="customerPromotionModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5 fw-bold" id="customerPromotionModalTitle">Promote customer to administrator?</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">This permanently deletes all of the customer’s orders, including completed orders, and removes their ID verification image and customer notifications. Notifications linked to those orders will also be deleted. Stock reserved by Processing orders will be restored, and completed orders will no longer count toward sales reports. Continue?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="customerPromotionConfirm" class="btn btn-danger">Delete customer history and promote</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountModalLabel"
@@ -235,9 +281,9 @@
         </div>
     </div>
 
-    <script src="backend/admin-users.js?v=admin-role-display-2"></script>
+    <script src="backend/admin-users.js?v=admin-customer-promotion-2"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

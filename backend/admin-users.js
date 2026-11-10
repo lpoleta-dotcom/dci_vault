@@ -5,6 +5,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tableBody || !form || !modalElement) return;
 
     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    const idDocumentModalElement = document.getElementById('idDocumentModal');
+    const idDocumentModal = idDocumentModalElement
+        ? bootstrap.Modal.getOrCreateInstance(idDocumentModalElement)
+        : null;
+    const accountStatusModalElement = document.getElementById('accountStatusModal');
+    const accountStatusModal = accountStatusModalElement
+        ? bootstrap.Modal.getOrCreateInstance(accountStatusModalElement)
+        : null;
+    const promotionModalElement = document.getElementById('customerPromotionModal');
+    const promotionModal = promotionModalElement
+        ? bootstrap.Modal.getOrCreateInstance(promotionModalElement)
+        : null;
     const search = document.getElementById('usersSearch');
     const errorMessage = document.getElementById('createAccountError');
     const submitButton = document.getElementById('createAccountSubmit');
@@ -19,6 +31,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let csrfToken = '';
     let selectedRole = 'all';
     let editingUserId = null;
+    let pendingAccountStatus = null;
+    let pendingPromotionUserId = null;
+    let confirmedPromotionUserId = null;
+    const accountStatusError = document.getElementById('accountStatusError');
+    const accountStatusConfirm = document.getElementById('accountStatusConfirm');
+    const accountStatusCancel = document.getElementById('accountStatusCancel');
 
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -32,6 +50,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = [user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ');
         const address = [user.street, user.barangay, user.city, user.province, user.postal].filter(Boolean).join(', ');
         const ordersLink = `admin-order.php?search=${encodeURIComponent(user.username)}`;
+        const verificationStatus = user.verification_status || 'Pending';
+        const verificationBadgeClass = verificationStatus === 'Approved'
+            ? 'bg-success'
+            : verificationStatus === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark';
+        const verificationControls = Number(user.position) !== 1
+            ? '<span class="text-secondary">—</span>'
+            : `<div class="d-flex flex-wrap align-items-center gap-1">
+                ${user.has_id_document
+                    ? '<button type="button" class="btn btn-sm btn-outline-primary view-id-btn"><i class="bi bi-card-image me-1" aria-hidden="true"></i>View ID</button>'
+                    : '<span class="small text-secondary">No ID submitted</span>'}
+                ${verificationStatus === 'Pending' && user.has_id_document
+                    ? `<button type="button" class="btn btn-sm btn-outline-success verification-action-btn" data-verification-status="Approved"><i class="bi bi-check2 me-1" aria-hidden="true"></i>Approve</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger verification-action-btn" data-verification-status="Rejected"><i class="bi bi-x-lg me-1" aria-hidden="true"></i>Reject</button>`
+                    : ''}
+            </div>`;
         row.innerHTML = `
             <td class="ps-4 fw-semibold">${escapeHtml(name)}</td>
             <td>@${escapeHtml(user.username)}</td>
@@ -43,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <td>${escapeHtml(roleNames[Number(user.position)] || 'Unknown')}</td>
             <td><span class="account-status-badge ${user.is_active ? 'is-active' : 'is-inactive'}">
                 ${user.is_active ? 'Active' : 'Deactivated'}</span></td>
+            <td>${Number(user.position) === 1
+                ? `<span class="badge ${verificationBadgeClass} mb-2">${escapeHtml(verificationStatus)}</span>${verificationControls}`
+                : verificationControls}</td>
             <td class="text-end pe-4"><div class="d-flex justify-content-end gap-1">
                 <button type="button" class="btn btn-sm btn-outline-dark edit-user-btn" aria-label="Edit ${escapeHtml(name)}">
                     <i class="bi bi-pencil" aria-hidden="true"></i></button>
@@ -58,13 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFilters() {
         const query = search.value.trim().toLocaleLowerCase();
         const rows = Array.from(tableBody.querySelectorAll('tr[data-user-id]'));
-        const counts = { all: rows.length, '1': 0, '2': 0, inactive: 0 };
+        const counts = { all: rows.length, '1': 0, '2': 0, inactive: 0, pending: 0 };
         rows.forEach(row => {
             const user = usersById.get(row.dataset.userId);
             if (user && Number(user.position) in roleNames) counts[String(user.position)] += 1;
             if (user && !user.is_active) counts.inactive += 1;
+            if (user && Number(user.position) === 1 && user.verification_status === 'Pending') counts.pending += 1;
             const matchesRole = selectedRole === 'all'
-                || (selectedRole === 'inactive' ? !user.is_active : String(user.position) === selectedRole);
+                || (selectedRole === 'inactive'
+                    ? !user.is_active
+                    : selectedRole === 'verification-pending'
+                        ? Number(user.position) === 1 && user.verification_status === 'Pending'
+                        : String(user.position) === selectedRole);
             const matchesSearch = row.textContent.toLocaleLowerCase().includes(query);
             row.classList.toggle('d-none', !matchesRole || !matchesSearch);
         });
@@ -73,12 +114,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('adminAccountCount').textContent = counts['2'];
         document.getElementById('customerAccountCount').textContent = counts['1'];
         document.getElementById('inactiveAccountCount').textContent = counts.inactive;
+        document.getElementById('pendingVerificationCount').textContent = counts.pending;
 
         let empty = tableBody.querySelector('[data-empty-state]');
         if (!empty) {
             empty = document.createElement('tr');
             empty.dataset.emptyState = 'true';
-            empty.innerHTML = '<td colspan="8" class="text-center text-secondary py-4">No accounts match this filter.</td>';
+            empty.innerHTML = '<td colspan="9" class="text-center text-secondary py-4">No accounts match this filter.</td>';
             tableBody.append(empty);
         }
         empty.classList.toggle('d-none', rows.some(row => !row.classList.contains('d-none')));
@@ -96,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadUsers() {
-        tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-secondary py-4">Loading accounts…</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-secondary py-4">Loading accounts…</td></tr>';
         const response = await fetch('admin-users-api.php', { cache: 'no-store' });
         const result = await response.json();
         if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load user accounts.');
@@ -159,19 +201,74 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = event.target.closest('tr[data-user-id]');
         if (!row) return;
         const user = usersById.get(row.dataset.userId);
+        if (event.target.closest('.view-id-btn')) {
+            if (!idDocumentModal) return;
+            document.getElementById('idDocumentModalTitle').textContent = `ID submission: ${user.username}`;
+            document.getElementById('idDocumentPreview').src =
+                `admin-id-image.php?user_id=${encodeURIComponent(user.user_id)}&v=${Date.now()}`;
+            idDocumentModal.show();
+            return;
+        }
+        const verificationButton = event.target.closest('.verification-action-btn');
+        if (verificationButton) {
+            const verificationStatus = verificationButton.dataset.verificationStatus;
+            if (
+                verificationStatus === 'Rejected' &&
+                !window.confirm(`Reject the ID verification submitted by ${user.username}?`)
+            ) return;
+            verificationButton.disabled = true;
+            try {
+                await postUpdate({
+                    action: 'verification',
+                    user_id: user.user_id,
+                    verification_status: verificationStatus
+                });
+                await loadUsers();
+            } catch (error) {
+                window.alert(error.message);
+                verificationButton.disabled = false;
+            }
+            return;
+        }
         if (event.target.closest('.edit-user-btn')) {
             openForm(user);
             return;
         }
         if (!event.target.closest('.toggle-user-btn')) return;
         const nextActive = !user.is_active;
-        if (!window.confirm(`${nextActive ? 'Reactivate' : 'Deactivate'} ${user.username}? Their order history will be preserved.`)) return;
+        if (!accountStatusModal) return;
+        pendingAccountStatus = { user, nextActive };
+        accountStatusError.textContent = '';
+        document.getElementById('accountStatusModalTitle').textContent =
+            nextActive ? 'Reactivate account?' : 'Deactivate account?';
+        document.getElementById('accountStatusModalMessage').textContent =
+            `${nextActive ? 'Reactivate' : 'Deactivate'} ${user.username}? Their order history will be preserved.`;
+        accountStatusConfirm.textContent = nextActive ? 'Reactivate account' : 'Deactivate account';
+        accountStatusConfirm.className = `btn ${nextActive ? 'btn-success' : 'btn-danger'}`;
+        accountStatusCancel.textContent = nextActive ? 'Cancel' : 'Keep account';
+        accountStatusModal.show();
+    });
+
+    accountStatusConfirm.addEventListener('click', async () => {
+        if (!pendingAccountStatus || accountStatusConfirm.disabled) return;
+        const { user, nextActive } = pendingAccountStatus;
+        accountStatusConfirm.disabled = true;
+        accountStatusError.textContent = '';
         try {
             await postUpdate({ action: 'status', user_id: user.user_id, is_active: nextActive ? 1 : 0 });
             await loadUsers();
+            accountStatusModal.hide();
+            pendingAccountStatus = null;
         } catch (error) {
-            window.alert(error.message);
+            accountStatusError.textContent = error.message || 'Unable to update account status.';
+        } finally {
+            accountStatusConfirm.disabled = false;
         }
+    });
+
+    accountStatusModalElement?.addEventListener('hidden.bs.modal', () => {
+        pendingAccountStatus = null;
+        accountStatusError.textContent = '';
     });
 
     form.addEventListener('submit', async event => {
@@ -185,9 +282,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const values = Object.fromEntries(new FormData(form).entries());
+        const editedUser = editingUserId ? usersById.get(String(editingUserId)) : null;
+        if (
+            editingUserId &&
+            editedUser &&
+            Number(editedUser.position) === 1 &&
+            Number(values.role) === 2 &&
+            confirmedPromotionUserId !== editingUserId
+        ) {
+            if (!promotionModal) return;
+            pendingPromotionUserId = editingUserId;
+            promotionModal.show();
+            return;
+        }
+        confirmedPromotionUserId = null;
+
         submitButton.disabled = true;
         try {
-            const values = Object.fromEntries(new FormData(form).entries());
             if (editingUserId) {
                 await postUpdate({
                     action: 'update',
@@ -224,8 +336,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.getElementById('customerPromotionConfirm').addEventListener('click', () => {
+        if (!pendingPromotionUserId) return;
+        confirmedPromotionUserId = pendingPromotionUserId;
+        pendingPromotionUserId = null;
+        promotionModal.hide();
+        form.requestSubmit();
+    });
+
+    promotionModalElement?.addEventListener('hidden.bs.modal', () => {
+        pendingPromotionUserId = null;
+    });
+
     loadUsers().catch(error => {
         console.error('Unable to load user accounts.', error);
-        tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">${escapeHtml(error.message)}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">${escapeHtml(error.message)}</td></tr>`;
+    });
+
+    idDocumentModalElement?.addEventListener('hidden.bs.modal', () => {
+        document.getElementById('idDocumentPreview').removeAttribute('src');
     });
 });

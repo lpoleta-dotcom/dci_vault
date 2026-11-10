@@ -13,6 +13,7 @@
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style/style.css?v=customer-nav-3">
+    <meta name="csrf-token" content="<?php echo $customerEscape($customerCsrfToken); ?>">
     <script>
         (function () {
             try {
@@ -35,7 +36,9 @@
             <a class="text-decoration-none" href="cstmr-prod.php">
                 <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
             </a>
-            <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            </a>
         </div>
 
         <!-- Top Navigation Links (Aligned to DCI Tech Blue Palette) -->
@@ -99,6 +102,10 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-1 text-dark" id="completed-tab" data-bs-toggle="pill"
                             type="button">Completed</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link btn-sm px-3 py-1 text-dark" id="cancelled-tab" data-bs-toggle="pill"
+                            type="button">Cancelled</button>
                     </li>
                 </ul>
             </div>
@@ -260,7 +267,7 @@
     <!-- Custom JavaScript file -->
     <script src="backend/cstmr.js?v=notification-targets-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

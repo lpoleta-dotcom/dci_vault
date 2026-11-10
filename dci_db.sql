@@ -57,7 +57,9 @@ CREATE TABLE `users` (
   `postal` varchar(10) NOT NULL,
   `position` int(11) NOT NULL DEFAULT '1',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `avatar` varchar(255) DEFAULT NULL
+  `avatar` varchar(255) DEFAULT NULL,
+  `verification_status` enum('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
+  `id_document` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -65,7 +67,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`user_id`, `first_name`, `middle_name`, `last_name`, `username`, `password`, `contact_no`, `street`, `barangay`, `city`, `province`, `postal`, `position`, `avatar`) VALUES
-(1, 'Lyra Janelle', 'Pilapil', 'Oleta', 'luraloo@123', '$2y$10$7aQYxsgVglIawKN6IDx2lOwDmjosg.RFdxTAPGPF7JG3reVOYJnVO', '09658323208', 'Blk 2, Lt 22', 'San Cristobal', 'Calamba', 'Laguna', '4027', 1, 'assets/user.jpg');
+(1, 'Lyra Janelle', 'Pilapil', 'Oleta', 'luraloo@123', '$2y$10$7aQYxsgVglIawKN6IDx2lOwDmjosg.RFdxTAPGPF7JG3reVOYJnVO', '09658323208', 'Blk 2, Lt 22', 'San Cristobal', 'Calamba', 'Laguna', '4027', 2, 'assets/user.jpg');
 
 --
 -- Indexes for dumped tables
@@ -218,10 +220,10 @@ CREATE TABLE IF NOT EXISTS `product_size_stock_alerts` (
 
 -- Seed the categories used by the existing customer product filters.
 INSERT IGNORE INTO `categories` (`name`,`slug`) VALUES
-  ('T-Shirt','tshirt'),
+  ('Tops','tshirt'),
   ('Bottom','bottom'),
   ('Outerwear','outerwear'),
-  ('Accessory','accessory');
+  ('Accessories','accessory');
 
 -- Sample catalog data based on product image folders in /assets.
 INSERT IGNORE INTO `products` (`product_id`,`category_id`,`name`,`description`,`price`,`sku`) VALUES

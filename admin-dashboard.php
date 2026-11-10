@@ -12,7 +12,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=admin-nav-2">
+    <link rel="stylesheet" href="style/style.css?v=admin-theme-3">
+    <script src="backend/session-history.js"></script>
     <script>
         (function () {
             try {
@@ -32,8 +33,12 @@
     <header
         class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 bg-white border-bottom">
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
+            <a href="admin-dashboard.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
+            </a>
+            <a href="admin-dashboard.php" class="text-decoration-none">
             <span class="fw-bold fs-5 text-dark">DCI Vault <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+            </a>
         </div>
 
         <div class="admin-header-actions">
@@ -222,7 +227,7 @@
     <!-- Custom JavaScript file -->
     <script src="backend/admin.js?v=notification-targets-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

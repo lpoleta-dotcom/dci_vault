@@ -40,6 +40,7 @@ if (isset($_POST['signUp'])) {
     $addCity = $postString('addCity');
     $addProv = $postString('addProv');
     $addPost = $postString('addPost');
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'id-verification.php';
     $pWord = isset($_POST['pWord']) && is_string($_POST['pWord']) ? $_POST['pWord'] : '';
     $confirmPassword = isset($_POST['confirmPassword']) && is_string($_POST['confirmPassword'])
         ? $_POST['confirmPassword']
@@ -92,8 +93,8 @@ if (isset($_POST['signUp'])) {
     }
     $insertStmt = $conn->prepare(
         'INSERT INTO users
-            (first_name, middle_name, last_name, username, contact_no, street, barangay, city, province, postal, password, position)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)'
+            (first_name, middle_name, last_name, username, contact_no, street, barangay, city, province, postal, password, position, id_document, verification_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, \'Pending\')'
     );
     if ($insertStmt === false) {
         error_log('Customer account insert prepare failed: ' . $conn->error);
@@ -101,8 +102,9 @@ if (isset($_POST['signUp'])) {
         header('Location: sign-up.php');
         exit();
     }
+    $idDocumentFilename = '';
     $insertStmt->bind_param(
-        'sssssssssss',
+        'ssssssssssss',
         $firstName,
         $middleName,
         $lastName,
@@ -113,7 +115,8 @@ if (isset($_POST['signUp'])) {
         $addCity,
         $addProv,
         $addPost,
-        $pWordHash
+        $pWordHash,
+        $idDocumentFilename
     );
     if (!$conn->begin_transaction()) {
         $insertStmt->close();
@@ -122,11 +125,20 @@ if (isset($_POST['signUp'])) {
         header('Location: sign-up.php');
         exit();
     }
+    $idDocumentFilename = storeVerificationIdUpload($_FILES['id_document'] ?? null, $idUploadError);
+    if ($idDocumentFilename === false) {
+        $insertStmt->close();
+        $conn->rollback();
+        $_SESSION['signup_error'] = $idUploadError;
+        header('Location: sign-up.php');
+        exit();
+    }
     if (!$insertStmt->execute()) {
         $duplicateUsername = $insertStmt->errno === 1062;
         error_log('Customer account insert failed: ' . $insertStmt->error);
         $insertStmt->close();
         $conn->rollback();
+        deleteVerificationIdUpload($idDocumentFilename);
         $_SESSION['signup_error'] = $duplicateUsername
             ? 'Username already exists. Please choose another username.'
             : 'Account creation is temporarily unavailable.';
@@ -147,6 +159,7 @@ if (isset($_POST['signUp'])) {
         !$conn->commit()
     ) {
         $conn->rollback();
+        deleteVerificationIdUpload($idDocumentFilename);
         error_log('Customer account registration could not save its notifications.');
         $_SESSION['signup_error'] = 'Account creation is temporarily unavailable.';
         header('Location: sign-up.php');

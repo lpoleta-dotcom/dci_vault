@@ -99,6 +99,7 @@ $catalogEscape = static function ($value) {
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style/style.css?v=customer-nav-3">
+    <script src="backend/session-history.js"></script>
     <script>
         (function () {
             try {
@@ -121,7 +122,9 @@ $catalogEscape = static function ($value) {
             <a class="text-decoration-none" href="cstmr-prod.php">
                 <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
             </a>
-            <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            </a>
         </div>
 
         <!-- Top Navigation Links (Aligned to DCI Tech Blue Palette) -->
@@ -193,7 +196,7 @@ $catalogEscape = static function ($value) {
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-2 text-dark" data-bs-toggle="pill"
-                            data-category="tshirt">T-Shirt</button>
+                            data-category="tshirt">Tops</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-2 text-dark" data-bs-toggle="pill"
@@ -205,7 +208,7 @@ $catalogEscape = static function ($value) {
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-2 text-dark" data-bs-toggle="pill"
-                            data-category="accessory">Accessory</button>
+                            data-category="accessory">Accessories</button>
                     </li>
                 </ul>
             </div>
@@ -323,6 +326,6 @@ $catalogEscape = static function ($value) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/cstmr.js?v=notification-targets-1"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 </html>

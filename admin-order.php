@@ -12,14 +12,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=admin-nav-2">
+    <link rel="stylesheet" href="style/style.css?v=admin-theme-3">
     <script>
         (function () {
             try {
                 var saved = localStorage.getItem('dci-vault-theme');
                 var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                 document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : preferred;
-            } catch (error) {}
+            } catch (error) { }
         })();
     </script>
 </head>
@@ -32,18 +32,25 @@
     <header
         class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 bg-white border-bottom">
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
-            <span class="fw-bold fs-5 text-dark">DCI Vault <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+            <a href="admin-dashboard.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border">
+            </a>
+            <a href="admin-dashboard.php" class="text-decoration-none">
+                <span class="fw-bold fs-5 text-dark">DCI Vault <span
+                        class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 ms-2 fs-6 px-2 py-1 rounded-pill">Admin</span></span>
+            </a>
         </div>
 
         <div class="admin-header-actions">
             <!-- Administrator Profile Section -->
-            <?php $notificationRole = 'admin'; require __DIR__ . DIRECTORY_SEPARATOR . 'notification-widget.php'; ?>
+            <?php $notificationRole = 'admin';
+            require __DIR__ . DIRECTORY_SEPARATOR . 'notification-widget.php'; ?>
 
             <div class="user-profile d-flex align-items-center gap-2">
                 <div class="d-flex flex-column text-end lh-sm">
                     <!-- PHP INJECTION: Dynamically output admin name -->
-                    <h4 id="adminNameDisplay" class="mb-0 fs-6 fw-bold text-dark"><?php echo htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8'); ?></h4>
+                    <h4 id="adminNameDisplay" class="mb-0 fs-6 fw-bold text-dark">
+                        <?php echo htmlspecialchars($adminSessionName, ENT_QUOTES, 'UTF-8'); ?></h4>
                     <small id="adminPosDisplay" class="text-secondary">System Administrator</small>
                 </div>
                 <!-- PHP INJECTION: Dynamically output admin avatar -->
@@ -58,8 +65,7 @@
 
         <!-- NAVIGATION PANEL -->
         <nav class="main-navigation admin-sidebar d-flex flex-column justify-content-between p-3 flex-shrink-0 text-white"
-            aria-label="Admin navigation"
-            style="width: 260px;">
+            aria-label="Admin navigation" style="width: 260px;">
             <div class="d-flex flex-column gap-2">
                 <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded"
                     href="admin-dashboard.php">
@@ -76,8 +82,7 @@
                     href="admin-order.php" aria-current="page">
                     <i class="bi bi-bag-check fs-5"></i>Orders
                 </a>
-                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded"
-                    href="admin-users.php">
+                <a class="nav-link d-flex align-items-center gap-2 px-3 py-2 text-white rounded" href="admin-users.php">
                     <i class="bi bi-people fs-5"></i>Users
                 </a>
             </div>
@@ -104,28 +109,27 @@
                 <div class="admin-order-controls d-flex flex-column flex-lg-row align-items-lg-center gap-2">
                     <label class="visually-hidden" for="adminOrderSearch">Search orders or customers</label>
                     <input id="adminOrderSearch" class="form-control form-control-sm" type="search"
-                        placeholder="Search order, name, or username" style="min-width: 240px;"
-                        autocomplete="off">
+                        placeholder="Search order, name, or username" style="min-width: 240px;" autocomplete="off">
                     <!-- Status Filter Pills -->
-                    <ul class="nav nav-pills admin-order-filter gap-1 bg-white p-1 rounded shadow-sm border" id="adminOrderFilterTab"
-                        role="tablist" aria-label="Filter orders by status">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active btn-sm px-3 py-1 text-white shadow-sm" id="admin-all-tab"
-                            data-bs-toggle="pill" type="button"
-                            style="background-color: var(--contrast-primary, #2563EB);">All</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link btn-sm px-3 py-1 text-dark" id="admin-processing-tab"
-                            data-bs-toggle="pill" type="button">Processing</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link btn-sm px-3 py-1 text-dark" id="admin-completed-tab"
-                            data-bs-toggle="pill" type="button">Completed</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link btn-sm px-3 py-1 text-dark" id="admin-cancelled-tab"
-                            data-bs-toggle="pill" type="button">Cancelled</button>
-                    </li>
+                    <ul class="nav nav-pills admin-order-filter gap-1 bg-white p-1 rounded shadow-sm border"
+                        id="adminOrderFilterTab" role="tablist" aria-label="Filter orders by status">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active btn-sm px-3 py-1 text-white shadow-sm" id="admin-all-tab"
+                                data-bs-toggle="pill" type="button"
+                                style="background-color: var(--contrast-primary, #2563EB);">All</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm px-3 py-1 text-dark" id="admin-processing-tab"
+                                data-bs-toggle="pill" type="button">Processing</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm px-3 py-1 text-dark" id="admin-completed-tab"
+                                data-bs-toggle="pill" type="button">Completed</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link btn-sm px-3 py-1 text-dark" id="admin-cancelled-tab"
+                                data-bs-toggle="pill" type="button">Cancelled</button>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -147,7 +151,9 @@
                             </tr>
                         </thead>
                         <tbody id="adminOrdersTableBody">
-                            <tr><td colspan="7" class="text-center text-secondary py-4">Loading orders…</td></tr>
+                            <tr>
+                                <td colspan="7" class="text-center text-secondary py-4">Loading orders…</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -250,10 +256,28 @@
         </div>
     </div>
 
+    <div class="modal fade" id="adminOrderStatusErrorModal" tabindex="-1" aria-labelledby="adminOrderStatusErrorTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5 fw-bold" id="adminOrderStatusErrorTitle">Unable to update order</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="adminOrderStatusErrorMessage" class="mb-0" role="alert" aria-live="assertive"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark px-4" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom JavaScript file -->
-    <script src="backend/admin.js?v=notification-targets-1"></script>
+    <script src="backend/admin.js?v=notification-targets-3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

@@ -450,11 +450,24 @@ document.addEventListener('DOMContentLoaded', () => {
             cart.splice(Number(button.closest('tr').dataset.index), 1);
             save();
         });
-        document.getElementById('clearCartBtn')?.addEventListener('click', () => {
-            if (!cart.length || !window.confirm('Empty your cart?')) return;
-            cart = [];
-            save();
-        });
+        const emptyCartButton = document.getElementById('clearCartBtn');
+        const emptyCartDialog = document.getElementById('emptyCartModal');
+        const confirmEmptyCartButton = document.getElementById('confirmEmptyCartBtn');
+        if (emptyCartButton && emptyCartDialog && confirmEmptyCartButton && window.bootstrap) {
+            const emptyCartModal = bootstrap.Modal.getOrCreateInstance(emptyCartDialog);
+            emptyCartButton.addEventListener('click', () => {
+                if (cart.length) emptyCartModal.show();
+            });
+            confirmEmptyCartButton.addEventListener('click', () => {
+                if (!cart.length) {
+                    emptyCartModal.hide();
+                    return;
+                }
+                cart = [];
+                save();
+                emptyCartModal.hide();
+            });
+        }
         const refreshInventory = async () => {
             const response = await fetch('catalog-feed.php', { cache: 'no-store' });
             const products = await response.json();
@@ -495,6 +508,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let pendingOrder = null;
 
             placeOrderButton.addEventListener('click', () => {
+                const paymentSelect = document.getElementById('paymentMethod');
+                if (paymentSelect?.value === 'cod' && paymentSelect.selectedOptions[0]?.disabled) {
+                    notify('Cash on Delivery requires an approved ID. Choose another payment method or check your verification status in Account Settings.');
+                    return;
+                }
                 if (!cart.length) {
                     notify('Your cart is empty. Please add products before checking out.');
                     return;
@@ -534,7 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const subtotal = checkoutCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
                 const vat = calculateCartVat(checkoutCart);
                 const shipping = shippingFee;
-                const paymentSelect = document.getElementById('paymentMethod');
                 const itemsContainer = document.getElementById('checkoutItems');
                 itemsContainer.replaceChildren();
                 checkoutCart.forEach(item => {
@@ -642,13 +659,16 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'card border-0 shadow-sm p-4 bg-white';
             card.dataset.status = order.status;
             card.dataset.orderId = String(order.order_id);
+            const canCancel = order.status === 'Processing'
+                && Number.isSafeInteger(Number(order.order_id))
+                && Number(order.order_id) > 0;
             const preview = order.items?.[0];
             const orderLabel = String(order.id).startsWith('ORD-') ? order.id : `ORD-2026-${String(order.id).padStart(3, '0')}`;
             card.innerHTML = `<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
                 <div><span class="fw-bold text-dark">Order #${escapeHtml(orderLabel)}</span><span class="text-muted small ms-2">Placed on ${escapeHtml(order.date)}</span></div>
                 <span class="badge ${statusClass(order.status)} border px-3 py-2 rounded-pill">${escapeHtml(order.status)}</span></div>
                 ${preview ? `<div class="d-flex align-items-center gap-3 mb-3"><img src="${escapeHtml(preview.image || 'assets/product.jpg')}" alt="" class="rounded object-fit-cover" style="width:65px;height:65px"><div class="flex-grow-1"><h6 class="mb-0 fw-semibold">${escapeHtml(preview.name)}</h6><small class="text-muted">Size: ${escapeHtml(preview.size)} | Qty: ${Number(preview.quantity)}</small></div><strong>${money(preview.price * preview.quantity)}</strong></div>` : ''}
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3"><div><small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">${escapeHtml(order.payment)}</span></small><div class="h6 fw-bold mb-0 mt-1">Total Amount: ${money(order.total)}</div></div><button type="button" class="view-order-btn btn btn-dark btn-sm px-3" data-order='${escapeHtml(JSON.stringify(order))}'>View Details</button></div>`;
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3"><div><small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">${escapeHtml(order.payment)}</span></small><div class="h6 fw-bold mb-0 mt-1">Total Amount: ${money(order.total)}</div></div><div class="d-flex gap-2"><button type="button" class="view-order-btn btn btn-dark btn-sm px-3" data-order='${escapeHtml(JSON.stringify(order))}'>View Details</button>${canCancel ? `<button type="button" class="cancel-order-btn btn btn-outline-danger btn-sm px-3" data-order-id="${Number(order.order_id)}">Cancel Order</button>` : ''}</div></div>`;
             list.prepend(card);
         });
 
@@ -658,9 +678,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const button = event.target.closest('.view-order-btn');
             if (!button || !modal) return;
             let order;
+            const card = button.closest('.card');
             if (button.dataset.order) order = JSON.parse(button.dataset.order);
             else {
-                const card = button.closest('.card');
                 const item = card.querySelector('.d-flex.align-items-center.gap-3.mb-3');
                 const text = item?.querySelector('.flex-grow-1');
                 order = {
@@ -680,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 order.vat = Number((button.dataset.orderVat || '').replace(/[^\d.]/g, '')) || calculateCartVat(order.items);
                 order.total = order.subtotal + order.shipping;
             }
+            if (card?.dataset.status) order.status = card.dataset.status;
             document.getElementById('modalOrderId').textContent = `#${String(order.id).startsWith('ORD-') ? order.id : `ORD-2026-${String(order.id).padStart(3, '0')}`}`;
             document.getElementById('modalOrderDate').textContent = order.date;
             const status = document.getElementById('modalOrderstatus');
@@ -698,6 +719,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 table.append(row);
             });
             modal.show();
+        });
+        list.addEventListener('click', async event => {
+            const cancelButton = event.target.closest('.cancel-order-btn');
+            if (!cancelButton || cancelButton.disabled) return;
+            if (!window.confirm('Are you sure you want to cancel this order?')) return;
+            cancelButton.disabled = true;
+            try {
+                const response = await fetch('customer-orders-api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({ order_id: cancelButton.dataset.orderId })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Unable to cancel the order.');
+                const card = cancelButton.closest('article');
+                const badge = card?.querySelector('.badge');
+                if (card && badge) {
+                    card.dataset.status = result.status;
+                    badge.textContent = result.status;
+                    badge.className = `badge ${statusClass(result.status)} border px-3 py-2 rounded-pill`;
+                    cancelButton.remove();
+                    const activeFilter = filters.find(button => button.classList.contains('active'));
+                    if (activeFilter && activeFilter.id !== 'all-tab'
+                        && activeFilter.textContent.trim().toLowerCase() !== result.status.toLowerCase()) {
+                        card.classList.add('d-none');
+                    }
+                }
+            } catch (error) {
+                window.alert(error.message || 'Unable to cancel the order.');
+                cancelButton.disabled = false;
+            }
         });
         filters.forEach(button => button.addEventListener('click', () => {
             const filter = button.id === 'all-tab' ? 'all' : button.textContent.trim().toLowerCase();
@@ -727,13 +782,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const card = document.createElement('article');
                     card.className = 'card border-0 shadow-sm p-4 bg-white';
                     card.dataset.status = order.status;
+                    card.dataset.orderId = String(order.order_id);
+                    const canCancel = order.status === 'Processing'
+                        && Number.isSafeInteger(Number(order.order_id))
+                        && Number(order.order_id) > 0;
                     const itemSubtotal = (order.items || []).reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
                     const paymentLabels = { gcash: 'GCash / Digital Wallet', card: 'Credit / Debit Card', cod: 'Cash on Delivery / Pickup' };
                     card.innerHTML = `<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
                         <div><span class="fw-bold text-dark">Order #${escapeHtml(order.id)}</span><span class="text-muted small ms-2">Placed on ${escapeHtml(order.date)}</span></div>
                         <span class="badge ${statusClass(order.status)} border px-3 py-2 rounded-pill">${escapeHtml(order.status)}</span></div>
                         ${preview ? `<div class="d-flex align-items-center gap-3 mb-3"><img src="${escapeHtml(preview.image || 'assets/product.jpg')}" alt="" class="rounded object-fit-cover" style="width:65px;height:65px"><div class="flex-grow-1"><h6 class="mb-0 fw-semibold">${escapeHtml(preview.name)}</h6><small class="text-muted">Size: ${escapeHtml(preview.size)} | Qty: ${Number(preview.quantity)}</small></div><strong>${money(preview.price * preview.quantity)}</strong></div>` : ''}
-                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3"><div><small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">${escapeHtml(paymentLabels[order.payment] || order.payment)}</span></small><div class="h6 fw-bold mb-0 mt-1">Total Amount: ${money(order.total || (itemSubtotal + order.vat + order.shipping))}</div></div><button type="button" class="view-order-btn btn btn-dark btn-sm px-3">View Details</button></div>`;
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3"><div><small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">${escapeHtml(paymentLabels[order.payment] || order.payment)}</span></small><div class="h6 fw-bold mb-0 mt-1">Total Amount: ${money(order.total || (itemSubtotal + order.vat + order.shipping))}</div></div><div class="d-flex gap-2"><button type="button" class="view-order-btn btn btn-dark btn-sm px-3">View Details</button>${canCancel ? `<button type="button" class="cancel-order-btn btn btn-outline-danger btn-sm px-3" data-order-id="${Number(order.order_id)}">Cancel Order</button>` : ''}</div></div>`;
                     card.querySelector('.view-order-btn').dataset.order = JSON.stringify(order);
                     list.append(card);
                 });

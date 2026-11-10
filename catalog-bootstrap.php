@@ -23,19 +23,20 @@ function ensureStarterCatalog(mysqli $conn): void
     }
 
     $categories = [
-        ['T-Shirt', 'tshirt'],
+        ['Tops', 'tshirt'],
         ['Bottom', 'bottom'],
         ['Outerwear', 'outerwear'],
-        ['Accessory', 'accessory']
+        ['Accessories', 'accessory']
     ];
     $categoryInsert = $conn->prepare('INSERT IGNORE INTO categories (name, slug) VALUES (?, ?)');
+    $categoryUpdate = $conn->prepare('UPDATE categories SET name = ? WHERE slug = ?');
     $categoryLookup = $conn->prepare('SELECT category_id FROM categories WHERE slug = ? LIMIT 1');
     $productInsert = $conn->prepare('INSERT IGNORE INTO products (category_id, name, description, price, sku) VALUES (?, ?, ?, ?, ?)');
     $productLookup = $conn->prepare('SELECT product_id FROM products WHERE sku = ? LIMIT 1');
     $imageInsert = $conn->prepare('INSERT IGNORE INTO product_images (product_id, image_url, view_label, sort_order) VALUES (?, ?, ?, ?)');
     $variantInsert = $conn->prepare('INSERT IGNORE INTO product_variants (product_id, size, color, stock_quantity) VALUES (?, ?, ?, ?)');
 
-    if (!$categoryInsert || !$categoryLookup || !$productInsert || !$productLookup || !$imageInsert || !$variantInsert) {
+    if (!$categoryInsert || !$categoryUpdate || !$categoryLookup || !$productInsert || !$productLookup || !$imageInsert || !$variantInsert) {
         error_log('Catalog bootstrap could not prepare its statements: ' . $conn->error);
         return;
     }
@@ -45,6 +46,11 @@ function ensureStarterCatalog(mysqli $conn): void
         $categoryInsert->bind_param('ss', $name, $slug);
         if (!$categoryInsert->execute()) {
             error_log('Catalog category seed failed: ' . $categoryInsert->error);
+            return;
+        }
+        $categoryUpdate->bind_param('ss', $name, $slug);
+        if (!$categoryUpdate->execute()) {
+            error_log('Catalog category name update failed: ' . $categoryUpdate->error);
             return;
         }
         $categoryLookup->bind_param('s', $slug);

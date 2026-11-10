@@ -10,7 +10,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style/style.css?v=cart-select-1">
+    <link rel="stylesheet" href="style/style.css?v=cart-empty-modal-1">
     <script>
         (function () {
             try {
@@ -32,7 +32,9 @@
             <a class="text-decoration-none" href="cstmr-prod.php">
                 <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
             </a>
-            <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            </a>
         </div>
 
         <!-- Top Navigation Links (Aligned to DCI Tech Blue Palette) -->
@@ -157,8 +159,21 @@
                                 <select id="paymentMethod" class="form-select shadow-none">
                                     <option value="gcash">GCash / Digital Wallet</option>
                                     <option value="card">Credit / Debit Card</option>
-                                    <option value="cod">Cash on Delivery / Pickup</option>
+                                    <?php if ($customerVerificationStatus === 'Approved'): ?>
+                                        <option value="cod">Cash on Delivery / Pickup</option>
+                                    <?php else: ?>
+                                        <option value="cod" disabled>Cash on Delivery / Pickup (ID approval required)</option>
+                                    <?php endif; ?>
                                 </select>
+                                <?php if ($customerVerificationStatus !== 'Approved'): ?>
+                                    <small class="form-text text-secondary d-block mt-1">
+                                        <?php if ($customerVerificationStatus === 'Rejected'): ?>
+                                            Your ID was not approved. Submit a replacement from <a href="cstmr-account.php">Account Settings</a>, or choose another payment method.
+                                        <?php else: ?>
+                                            Cash on Delivery will be available after an administrator approves your ID. You can check your status in <a href="cstmr-account.php">Account Settings</a>.
+                                        <?php endif; ?>
+                                    </small>
+                                <?php endif; ?>
                                 <small id="quantityLimitHint" class="form-text text-secondary" aria-live="polite">0 selected items.</small>
                             </div>
                         </div>
@@ -170,6 +185,24 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div class="modal fade" id="emptyCartModal" tabindex="-1" aria-labelledby="emptyCartModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="emptyCartModalTitle">Empty your cart?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-secondary">
+                    This will remove all items from your cart. This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep my items</button>
+                    <button type="button" id="confirmEmptyCartBtn" class="btn btn-danger">Empty Cart</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Checkout review and success dialog -->
@@ -233,9 +266,9 @@
         </div>
     </div>
 
-    <script src="backend/cstmr.js?v=cart-select-1"></script>
+    <script src="backend/cstmr.js?v=cart-id-verification-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>
