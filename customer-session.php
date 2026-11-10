@@ -12,10 +12,14 @@ if ($userId <= 0) {
     header('Location: login.php');
     exit();
 }
+if ((int) ($_SESSION['position'] ?? 0) !== 1) {
+    header('Location: login.php');
+    exit();
+}
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'connect.php';
 
-$headerUserStmt = $conn->prepare('SELECT username FROM users WHERE user_id = ?');
+$headerUserStmt = $conn->prepare('SELECT username, position, is_active FROM users WHERE user_id = ?');
 if ($headerUserStmt === false) {
     die('Customer session query prepare error: ' . $conn->error);
 }
@@ -26,7 +30,7 @@ if (!$headerUserStmt->execute()) {
 $headerUser = $headerUserStmt->get_result()->fetch_assoc();
 $headerUserStmt->close();
 
-if (!$headerUser) {
+if (!$headerUser || (int) $headerUser['position'] !== 1 || (int) $headerUser['is_active'] !== 1) {
     $_SESSION = [];
     session_destroy();
     header('Location: login.php');
@@ -35,6 +39,10 @@ if (!$headerUser) {
 
 $customerHeaderUsername = $headerUser['username'];
 $_SESSION['username'] = $customerHeaderUsername;
+if (empty($_SESSION['customer_csrf_token'])) {
+    $_SESSION['customer_csrf_token'] = bin2hex(random_bytes(32));
+}
+$customerCsrfToken = $_SESSION['customer_csrf_token'];
 $customerAvatarUrl = 'assets/user.jpg';
 $avatarDirectory = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'avatars';
 foreach (['jpg', 'png', 'webp'] as $avatarExtension) {

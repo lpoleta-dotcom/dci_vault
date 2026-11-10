@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /dci_vault/dci_vault/
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 5M
+    php_value post_max_size 16M
+    <Files "admin-products-api.php">
+        php_flag display_errors Off
+    </Files>
+</IfModule>
+RewriteRule ^admin-dashboard\.html$ admin-dashboard.php [R=302,L]
+RewriteRule ^admin-sales\.html$ admin-sales.php [R=302,L]
+RewriteRule ^admin-prod\.html$ admin-prod.php [R=302,L]
+RewriteRule ^admin-order\.html$ admin-order.php [R=302,L]
+RewriteRule ^admin-users\.html$ admin-users.php [R=302,L]

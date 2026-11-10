@@ -5,6 +5,23 @@
  */
 function ensureStarterCatalog(mysqli $conn): void
 {
+    $imageTableSql = "CREATE TABLE IF NOT EXISTS product_images (
+        image_id int(11) NOT NULL AUTO_INCREMENT,
+        product_id int(11) NOT NULL,
+        image_url varchar(255) NOT NULL,
+        view_label varchar(40) NOT NULL DEFAULT 'Front',
+        sort_order int(11) NOT NULL DEFAULT 0,
+        PRIMARY KEY (image_id),
+        UNIQUE KEY uq_product_image_path (product_id, image_url(190)),
+        KEY idx_product_images_product (product_id),
+        CONSTRAINT fk_product_images_product FOREIGN KEY (product_id)
+            REFERENCES products (product_id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    if (!$conn->query($imageTableSql)) {
+        error_log('Catalog bootstrap could not ensure the product_images table: ' . $conn->error);
+        return;
+    }
+
     $categories = [
         ['T-Shirt', 'tshirt'],
         ['Bottom', 'bottom'],

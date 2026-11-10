@@ -12,7 +12,7 @@ function customerOrdersRespond($status, $data)
     exit();
 }
 
-if (empty($_SESSION['user_id'])) {
+if (empty($_SESSION['user_id']) || (int) ($_SESSION['position'] ?? 0) !== 1) {
     customerOrdersRespond(401, ['success' => false, 'message' => 'Please sign in to view your orders.']);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -20,6 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'connect.php';
 $userId = (int) $_SESSION['user_id'];
+$activeUserStmt = $conn->prepare('SELECT user_id FROM users WHERE user_id = ? AND position = 1 AND is_active = 1');
+if (!$activeUserStmt) customerOrdersRespond(500, ['success' => false, 'message' => 'Unable to verify your account.']);
+$activeUserStmt->bind_param('i', $userId);
+if (!$activeUserStmt->execute()) {
+    $activeUserStmt->close();
+    customerOrdersRespond(500, ['success' => false, 'message' => 'Unable to verify your account.']);
+}
+$activeUser = $activeUserStmt->get_result()->fetch_assoc();
+$activeUserStmt->close();
+if (!$activeUser) customerOrdersRespond(401, ['success' => false, 'message' => 'Your customer account is inactive or unavailable.']);
 $stmt = $conn->prepare('SELECT order_id, order_number, status, payment_method, subtotal, vat_amount, shipping_fee, total_amount, placed_at FROM orders WHERE user_id = ? ORDER BY placed_at DESC, order_id DESC');
 if (!$stmt) customerOrdersRespond(500, ['success' => false, 'message' => 'Unable to load orders.']);
 $stmt->bind_param('i', $userId);

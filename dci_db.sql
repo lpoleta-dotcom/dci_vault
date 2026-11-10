@@ -56,6 +56,7 @@ CREATE TABLE `users` (
   `province` varchar(100) NOT NULL,
   `postal` varchar(10) NOT NULL,
   `position` int(11) NOT NULL DEFAULT '1',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `avatar` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -130,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `product_images` (
   `view_label` varchar(40) NOT NULL DEFAULT 'Front',
   `sort_order` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`image_id`),
-  UNIQUE KEY `uq_product_image_path` (`product_id`,`image_url`),
+  UNIQUE KEY `uq_product_image_path` (`product_id`,`image_url`(190)),
   KEY `idx_product_images_product` (`product_id`),
   CONSTRAINT `fk_product_images_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -189,6 +190,30 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   CONSTRAINT `fk_order_items_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_order_items_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_order_items_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `notification_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `recipient_user_id` int(11) NOT NULL,
+  `notification_type` varchar(40) NOT NULL,
+  `title` varchar(150) NOT NULL,
+  `message` varchar(500) NOT NULL,
+  `target_url` varchar(255) NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`notification_id`),
+  KEY `idx_notifications_recipient_read_date` (`recipient_user_id`,`is_read`,`created_at`),
+  CONSTRAINT `fk_notifications_recipient` FOREIGN KEY (`recipient_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `product_size_stock_alerts` (
+  `product_id` int(11) NOT NULL,
+  `size` varchar(20) NOT NULL,
+  `is_low_stock` tinyint(1) NOT NULL DEFAULT 0,
+  `last_stock` int(11) NOT NULL DEFAULT 0,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_id`,`size`),
+  CONSTRAINT `fk_stock_alert_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Seed the categories used by the existing customer product filters.

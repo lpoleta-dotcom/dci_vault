@@ -5,11 +5,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo $customerEscape($customerCsrfToken); ?>">
     <title>DCI Vault | My Cart</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style/style.css?v=dark-all-6">
+    <link rel="stylesheet" href="style/style.css?v=cart-select-1">
     <script>
         (function () {
             try {
@@ -28,7 +29,9 @@
         
         <!-- Brand Logo / Title -->
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
+            </a>
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
         </div>
 
@@ -48,21 +51,21 @@
             </a>
         </nav>
 
-        <!-- Customer Profile / Account Section & Logout -->
-        <div class="d-flex align-items-center gap-3">
-            <div class="user-profile d-flex align-items-center gap-2">
-                <div class="d-flex flex-column text-end lh-sm">
-                    <a id="userName" data-session-managed="true" class="mb-0 fs-6 fw-bold text-decoration-none text-dark" href="cstmr-account.php"><?php echo $customerEscape($customerHeaderUsername); ?></a>
-                    <small id="userStatus" class="text-secondary">Active Shopper</small>
-                </div>
-                <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="User Avatar" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
-            </div>
+        <?php $notificationRole = 'customer'; require __DIR__ . DIRECTORY_SEPARATOR . 'notification-widget.php'; ?>
 
-            <!-- Logout Button Icon / Link -->
-            <a id="logoutBtn" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 px-2 py-1" href="logout.php" title="Log Out">
-                <i class="bi bi-box-arrow-right fs-6"></i>
-                <span class="d-none d-lg-inline">Log Out</span>
-            </a>
+        <div class="customer-header-actions d-flex align-items-center gap-2">
+            <div class="dropdown">
+                <button class="customer-profile-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile menu">
+                    <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
+                    <span id="userName" data-session-managed="true" class="customer-profile-name"><?php echo $customerEscape($customerHeaderUsername); ?></span>
+                    <i class="bi bi-chevron-down customer-profile-chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end customer-profile-menu">
+                    <li><a class="dropdown-item" href="cstmr-account.php"><i class="bi bi-person me-2" aria-hidden="true"></i>View Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a id="logoutBtn" class="dropdown-item customer-logout-item" href="logout.php"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Log Out</a></li>
+                </ul>
+            </div>
         </div>
     </header>
 
@@ -77,7 +80,7 @@
                 <div>
                     <span class="customer-eyebrow">ALMOST YOURS</span>
                     <h2 class="h3 fw-bold text-dark m-0">Shopping Cart</h2>
-                    <p class="customer-page-intro mb-0 mt-1">Review your picks before you check out.</p>
+                    <p class="customer-page-intro mb-0 mt-1">Select the items you want to order together and pay shipping once.</p>
                 </div>
                 <!-- JS TARGET: Click event to clear entire cart -->
                 <button id="clearCartBtn" class="btn btn-outline-danger btn-sm">
@@ -96,7 +99,11 @@
                             <table class="table align-middle mb-0">
                                 <thead class="table-light text-secondary small text-uppercase">
                                     <tr>
-                                        <th class="ps-4">Product</th>
+                                        <th class="ps-3" style="width: 46px;">
+                                            <input id="selectAllCartItems" class="form-check-input m-0" type="checkbox"
+                                                aria-label="Select all cart items">
+                                        </th>
+                                        <th>Product</th>
                                         <th>Size</th>
                                         <th>Price</th>
                                         <th style="width: 120px;">Qty</th>
@@ -104,37 +111,7 @@
                                         <th class="text-end pe-4">Action</th>
                                     </tr>
                                 </thead>
-                                <!-- JS TARGET / PHP INJECTION: Cart table body where items are looped or injected -->
                                 <tbody id="cartTableBody">
-                                    <!-- <?php 
-                                    /* 
-                                      PHP INJECTION EXAMPLE:
-                                      foreach ($cartItems as $item) {
-                                          echo '<tr>...item details...</tr>';
-                                      }
-                                    */ 
-                                    ?> -->
-                                    <!-- Static prototype row (Will be managed by JS/PHP) -->
-                                    <tr data-product-id="1" data-base-price="250.00">
-                                        <td class="ps-4">
-                                            <div class="fw-semibold">Classic T-Shirt</div>
-                                            <small class="text-muted">Product ID: 1</small>
-                                        </td>
-                                        <td>M</td>
-                                        <td class="item-price">P250.00</td>
-                                        <td>
-                                            <!-- JS TARGET: Input change triggers subtotal & total recalculation -->
-                                            <input type="number"
-                                                class="form-control form-control-sm shadow-none item-qty" value="1"
-                                                min="1" style="width: 70px;">
-                                        </td>
-                                        <td class="fw-semibold item-subtotal">P250.00</td>
-                                        <td class="text-end pe-4">
-                                            <!-- JS TARGET: Click event removes this item row -->
-                                            <button class="btn btn-sm text-danger remove-item-btn"><i
-                                                    class="bi bi-x-lg"></i></button>
-                                        </td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -162,6 +139,10 @@
                                 <!-- JS TARGET: Updated dynamically -->
                                 <span id="summaryShip" class="fw-semibold text-dark">P30.00</span>
                             </div>
+                            <div id="selectedItemsSummary" class="d-flex justify-content-between mb-2 text-secondary small d-none">
+                                <span>Selected items</span>
+                                <span id="summarySelectedCount" class="fw-semibold">0</span>
+                            </div>
                             <hr class="text-secondary opacity-25">
                             <div class="d-flex justify-content-between mb-4">
                                 <span class="h5 fw-bold text-dark m-0">Total Due</span>
@@ -178,13 +159,12 @@
                                     <option value="card">Credit / Debit Card</option>
                                     <option value="cod">Cash on Delivery / Pickup</option>
                                 </select>
-                                <small id="quantityLimitHint" class="form-text text-secondary" aria-live="polite">0 of 99 items in this order.</small>
+                                <small id="quantityLimitHint" class="form-text text-secondary" aria-live="polite">0 selected items.</small>
                             </div>
                         </div>
 
-                        <!-- Prototype checkout saves the order locally; replace with the PHP order endpoint during integration. -->
                         <button id="placeOrderBtn" class="button w-100 py-2">
-                            Place Order
+                            Proceed to Checkout
                         </button>
                     </div>
                 </div>
@@ -253,7 +233,7 @@
         </div>
     </div>
 
-    <script src="backend/cstmr.js?v=order-max-99"></script>
+    <script src="backend/cstmr.js?v=cart-select-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>

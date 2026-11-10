@@ -3,18 +3,30 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+$authCsrfToken = $_SESSION['auth_csrf_token'] ?? '';
+if ($authCsrfToken === '') {
+    $authCsrfToken = bin2hex(random_bytes(32));
+    $_SESSION['auth_csrf_token'] = $authCsrfToken;
+}
+
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
-if (!empty($_SESSION['user_id'])) {
+if (!empty($_SESSION['user_id']) && (int) ($_SESSION['position'] ?? 0) === 1) {
     header('Location: cstmr-prod.php');
     exit();
 }
 
-$loginError = ($_GET['error'] ?? '') === 'invalid'
-    ? 'Invalid username or password.'
-    : '';
+$loginError = '';
+if (($_GET['error'] ?? '') === 'invalid') {
+    $loginError = 'Invalid username or password.';
+} elseif (($_GET['error'] ?? '') === 'unavailable') {
+    $loginError = 'Sign-in is temporarily unavailable. Please try again.';
+} elseif (($_GET['error'] ?? '') === 'session') {
+    $loginError = 'Your session expired. Refresh the page and try again.';
+}
+$adminLoginRequired = ($_GET['error'] ?? '') === 'admin_login_required';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -313,13 +325,14 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
                     </div>
 
                     <form id="loginForm" action="account.php" method="post">
+                        <input type="hidden" name="auth_csrf_token" value="<?php echo htmlspecialchars($authCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="login-field mb-3">
                             <label for="nameInput" class="form-label small fw-semibold text-secondary">Username</label>
                             <div class="input-group">
                                 <span class="input-group-text border-end-0" aria-hidden="true"><i
                                         class="bi bi-person"></i></span>
                                 <input type="text" class="form-control border-start-0 shadow-none" id="nameInput"
-                                    name="uName" placeholder="Enter your username" autocomplete="username" required>
+                                    name="uName" placeholder="Enter your username" autocomplete="username" maxlength="50" required>
                             </div>
                         </div>
 
@@ -331,7 +344,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
                                         class="bi bi-lock"></i></span>
                                 <input type="password" class="form-control border-start-0 border-end-0 shadow-none"
                                     id="passwordInput" name="pWord" placeholder="Enter your password"
-                                    autocomplete="current-password" required>
+                                    autocomplete="current-password" maxlength="72" required>
                                 <button type="button" class="password-toggle btn btn-outline-secondary"
                                     id="passwordToggle" aria-label="Show password" aria-pressed="false"
                                     data-password-toggle="passwordInput">
@@ -341,7 +354,13 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
                         </div>
 
                         <div id="inputResponse" class="text-danger small mb-3 text-center" role="alert"
-                            aria-live="polite"><?php echo htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8'); ?></div>
+                            aria-live="polite">
+                            <?php if ($adminLoginRequired): ?>
+                                Admin privileges detected. Please switch to the Administrator Portal to sign in.
+                            <?php else: ?>
+                                <?php echo htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8'); ?>
+                            <?php endif; ?>
+                        </div>
 
                         <button type="submit" id="loginButton" name="logIn" value="1"
                             class="login-submit btn text-white w-100 fw-semibold py-2 shadow-sm"
