@@ -147,11 +147,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span class="admin-login-emblem" aria-hidden="true">
                     <img src="assets/logo.png" alt="">
                 </span>
-                <div class="admin-login-wordmark">DCI <span>Vault</span></div>
+                <div class="text-uppercase small fw-semibold mb-2"
+                    style="color: var(--contrast-primary, #2563EB); letter-spacing: 0.12em;">Authorized Personnel Only</div>
             </div>
 
-            <h1 id="adminLoginTitle">Administrator Sign In</h1>
-            <p class="admin-login-intro">Use an account assigned the Administrator role.</p>
+            <h1 id="adminLoginTitle">DCI Vault Admin</h1>
+            <p class="admin-login-intro mb-4">Sign in to manage your inventory, orders, and sales.</p>
 
             <form action="admin-login.php" method="post" class="admin-login-form">
                 <input type="hidden" name="admin_login_csrf_token" value="<?php echo htmlspecialchars($adminCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
@@ -186,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <p class="mt-4 admin-login-security">
                 <i class="bi bi-shield-fill-check" aria-hidden="true"></i>
-                <span>Admin access is restricted to authorized administrator accounts.</span>
+                <span>Authorized administrator access only.</span>
             </p>
         </section>
     </main>
