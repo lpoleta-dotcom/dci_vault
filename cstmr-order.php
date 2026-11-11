@@ -26,7 +26,8 @@
 </head>
 
 <!-- Russian Nesting Doll Layout -->
-<body class="customer-page customer-orders-page vh-100 overflow-hidden d-flex flex-column bg-light">
+<body class="customer-page customer-orders-page vh-100 overflow-hidden d-flex flex-column bg-light"
+    data-customer-id="<?php echo (int) $userId; ?>">
 
     <!-- HEADER CONTAINER WITH INTEGRATED NAVIGATION -->
     <header class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 gap-3 bg-white border-bottom">
@@ -112,61 +113,6 @@
 
             <!-- Customer Orders List Container -->
             <div class="d-flex flex-column gap-3" id="orderListContainer">
-                <?php 
-                /* 
-                  PHP INJECTION EXAMPLE:
-                  foreach ($customerOrders as $order) {
-                      // Render card dynamically for each order
-                  }
-                */ 
-                ?>
-
-                <!-- Order Card 1: Processing Status -->
-                <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--prod-rd, 0.75rem);">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
-                        <div>
-                            <span class="fw-bold text-dark">Order #ORD-2026-001</span>
-                            <span class="text-muted small ms-2">Placed on Oct 26, 2026</span>
-                        </div>
-                        <!-- Status Badge -->
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 align-self-start align-self-sm-center rounded-pill">Processing</span>
-                    </div>
-
-                    <!-- Item Preview Inside Order -->
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <img src="assets/product.jpg" alt="Product" class="rounded object-fit-cover shadow-sm"
-                            style="width: 65px; height: 65px;">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0 fw-semibold text-dark">Classic T-Shirt</h6>
-                            <small class="text-muted">Size: M | Qty: 2</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="fw-bold text-dark">P500.00</span>
-                        </div>
-                    </div>
-
-                    <!-- Card Footer: Total & Actions -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3">
-                        <div>
-                            <small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">GCash</span></small>
-                            <div class="h6 fw-bold mb-0 mt-1" style="color: var(--contrast-primary, #2563EB);">Total Amount: P530.00</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="view-order-btn btn text-white btn-sm px-3 shadow-sm fw-semibold" 
-                                style="background-color: var(--primary-color, #0F172A);"
-                                data-order-id="1"
-                                data-order-date="Oct 26, 2026"
-                                data-order-status="Processing"
-                                data-order-payment="GCash"
-                                data-order-subtotal="P500.00"
-                                data-order-vat="P53.58"
-                                data-order-shipping="P30.00"
-                                data-order-total="P530.00">
-                                View Details
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
@@ -218,14 +164,6 @@
                                 </tr>
                             </thead>
                             <tbody id="modalItemsTableBody">
-                                <!-- Dynamically injected via JS or PHP -->
-                                <tr>
-                                    <td class="fw-semibold text-dark">Classic T-Shirt</td>
-                                    <td>M</td>
-                                    <td>P250.00</td>
-                                    <td>2</td>
-                                    <td class="text-end fw-semibold text-dark">P500.00</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -264,8 +202,30 @@
         </div>
     </div>
 
+    <!-- Cancel Order Confirmation Modal -->
+    <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-dark" id="cancelOrderModalLabel">Cancel this order?</h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0 text-secondary">Are you sure you want to cancel <span id="cancelOrderNumber"
+                            class="fw-semibold text-dark">this order</span>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+                    <button type="button" class="btn btn-danger" id="confirmCancelOrderBtn">Cancel Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=notification-targets-1"></script>
+    <script src="backend/cstmr.js?v=customer-reset-state-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>

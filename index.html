@@ -11,7 +11,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=landing-motion-18">
+    <link rel="stylesheet" href="style/style.css?v=landing-motion-19">
+    <style>
+        :root[data-theme="dark"] .landing-page #productGridSection h2 {
+            color: #E5EDF8 !important;
+        }
+
+        :root[data-theme="dark"] .landing-page #categoryFilter .nav-link.active {
+            color: #FFFFFF !important;
+            background-color: #315FE8 !important;
+            border-color: #315FE8 !important;
+            box-shadow: 0 4px 12px rgba(49, 95, 232, 0.35);
+        }
+
+        :root[data-theme="dark"] .landing-page #categoryFilter .nav-link:hover:not(.active) {
+            color: #E5EDF8 !important;
+            background-color: #263A58 !important;
+            border-color: #405573;
+        }
+    </style>
     <script>
         (function () {
             try {
@@ -50,6 +68,7 @@
             <div class="landing-content mx-auto w-100">
                 <section class="landing-hero mb-5">
                     <span class="landing-hero-orb" aria-hidden="true"></span>
+                    <span class="landing-hero-particles" aria-hidden="true"></span>
                     <div class="row align-items-center g-4 position-relative">
                         <div class="col-lg-7">
                             <span class="landing-eyebrow"><i class="bi bi-bag-check me-2"></i>OFFICIAL DCI MERCH &
@@ -168,7 +187,7 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/app.js?v=department-logo-6"></script>
+    <script src="backend/app.js?v=hero-cursor-orbs-7"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>
 

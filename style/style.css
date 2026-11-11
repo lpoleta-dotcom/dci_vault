@@ -326,7 +326,19 @@ body {
 }
 
 .modal-carousel-inner {
-    height: 250px;
+    height: min(600px, 72vh);
+}
+
+#productModalImages .carousel-item > img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+@media (max-width: 767.98px) {
+    .modal-carousel-inner {
+        height: min(440px, 55vh);
+    }
 }
 
 /* LANDING PAGE */
@@ -425,6 +437,48 @@ body {
     box-shadow: 0 0 0.8rem 0.2rem rgba(120, 157, 255, 0.62);
     pointer-events: none;
     animation: landing-hero-orb-drift 7s ease-in-out infinite;
+}
+
+.landing-hero-particles {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease-out;
+}
+
+.landing-hero.is-tracking-pointer .landing-hero-particles {
+    opacity: 1;
+}
+
+.landing-hero-particles span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0.42rem;
+    height: 0.42rem;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    background: #b7c8ff;
+    box-shadow: 0 0 0.65rem rgba(120, 157, 255, 0.9);
+    transform: translate3d(var(--cursor-x, -1rem), var(--cursor-y, -1rem), 0) translate(-50%, -50%);
+    transition: transform 220ms cubic-bezier(0.2, 0.75, 0.3, 1);
+    will-change: transform;
+}
+
+.landing-hero-particles span:nth-child(2n) {
+    width: 0.32rem;
+    height: 0.32rem;
+    background: #fff;
+    transition-duration: 300ms;
+}
+
+.landing-hero-particles span:nth-child(3n) {
+    width: 0.24rem;
+    height: 0.24rem;
+    transition-duration: 380ms;
 }
 
 @keyframes landing-hero-orbit {
@@ -2876,6 +2930,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.13);
     border-radius: 50%;
     box-shadow: 0 0 0 3rem rgba(255, 255, 255, 0.025), 0 0 0 6rem rgba(255, 255, 255, 0.02);
+    animation: landing-hero-orbit 18s ease-in-out infinite;
 }
 
 .admin-login-main::after {
@@ -2886,6 +2941,14 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 50%;
     box-shadow: 0 0 0 3rem rgba(255, 255, 255, 0.018), 0 0 0 6rem rgba(255, 255, 255, 0.014);
+    animation: landing-hero-glow 9s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-login-main::before,
+    .admin-login-main::after {
+        animation: none;
+    }
 }
 
 .admin-login-header {

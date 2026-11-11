@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
 
 $authCsrfToken = $_SESSION['auth_csrf_token'] ?? '';
 if ($authCsrfToken === '') {

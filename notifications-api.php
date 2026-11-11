@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     if ($role === 'admin') {
         require_once __DIR__ . DIRECTORY_SEPARATOR . 'admin-session-init.php';
     } else {
-        session_start();
+        require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
     }
 }
 

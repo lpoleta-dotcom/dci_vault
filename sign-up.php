@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
 
 $authCsrfToken = $_SESSION['auth_csrf_token'] ?? '';
 if ($authCsrfToken === '') {
@@ -202,6 +200,14 @@ unset($_SESSION['signup_error']);
             background-color: var(--contrast-secondary, #1E40AF) !important;
             box-shadow: 0 0.6rem 1.2rem rgba(37, 99, 235, 0.22) !important;
             transform: translateY(-1px);
+        }
+
+        .auth-page #idDocumentHelp {
+            color: var(--muted-color, #64748B);
+        }
+
+        :root[data-theme="dark"] .auth-page #idDocumentHelp {
+            color: #B8C5D8 !important;
         }
 
         @media (max-width: 767.98px) {

@@ -178,24 +178,24 @@
                     <div class="row g-3 mb-4 bg-light p-3 rounded mx-0 border">
                         <div class="col-sm-6 col-lg-4">
                             <small class="text-secondary d-block">Customer</small>
-                            <span id="adminModalCustomerName" class="fw-semibold text-dark">John Doe</span>
+                            <span id="adminModalCustomerName" class="fw-semibold text-dark">—</span>
                         </div>
                         <div class="col-sm-6 col-lg-4">
                             <small class="text-secondary d-block">Contact</small>
-                            <span id="adminModalCustomerContact" class="fw-semibold text-dark">09123456789</span>
+                            <span id="adminModalCustomerContact" class="fw-semibold text-dark">—</span>
                         </div>
                         <div class="col-sm-6 col-lg-4">
                             <small class="text-secondary d-block">Payment Method</small>
-                            <span id="adminModalPayment" class="fw-semibold text-dark">GCash</span>
+                            <span id="adminModalPayment" class="fw-semibold text-dark">—</span>
                         </div>
                         <div class="col-sm-6 col-lg-4">
                             <small class="text-secondary d-block">Date Placed</small>
-                            <span id="adminModalDatePlaced" class="fw-semibold text-dark">Oct 28, 2026</span>
+                            <span id="adminModalDatePlaced" class="fw-semibold text-dark">—</span>
                         </div>
                         <div class="col-sm-6 col-lg-4">
                             <small class="text-secondary d-block">Current Status</small>
                             <span id="adminModalStatusBadge"
-                                class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 rounded-pill">Processing</span>
+                                class="badge bg-secondary bg-opacity-10 text-secondary border px-3 rounded-pill">—</span>
                         </div>
                     </div>
 
@@ -213,13 +213,6 @@
                                 </tr>
                             </thead>
                             <tbody id="adminModalItemsTable">
-                                <tr>
-                                    <td class="fw-semibold text-dark">Classic T-Shirt</td>
-                                    <td>M</td>
-                                    <td>₱250.00</td>
-                                    <td>2</td>
-                                    <td class="text-end fw-semibold text-dark">₱500.00</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -229,21 +222,21 @@
                         <div style="width: 260px;" class="d-flex flex-column gap-2">
                             <div class="d-flex justify-content-between text-secondary small">
                                 <span>Subtotal</span>
-                                <span id="adminModalSubtotal" class="fw-semibold text-dark">₱500.00</span>
+                                <span id="adminModalSubtotal" class="fw-semibold text-dark">—</span>
                             </div>
                             <div class="d-flex justify-content-between text-secondary small">
                                 <span>VAT included in prices</span>
-                                <span id="adminModalVat" class="fw-semibold text-dark">₱53.58</span>
+                                <span id="adminModalVat" class="fw-semibold text-dark">—</span>
                             </div>
                             <div class="d-flex justify-content-between text-secondary small">
                                 <span>Shipping Fee</span>
-                                <span id="adminModalShipping" class="fw-semibold text-dark">₱30.00</span>
+                                <span id="adminModalShipping" class="fw-semibold text-dark">—</span>
                             </div>
                             <hr class="text-secondary opacity-25 my-1">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold text-dark">Total Due</span>
                                 <span id="adminModalTotal" class="fw-bold fs-5"
-                                    style="color: var(--contrast-primary, #2563EB);">₱530.00</span>
+                                    style="color: var(--contrast-primary, #2563EB);">—</span>
                             </div>
                         </div>
                     </div>

@@ -63,13 +63,6 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`user_id`, `first_name`, `middle_name`, `last_name`, `username`, `password`, `contact_no`, `street`, `barangay`, `city`, `province`, `postal`, `position`, `avatar`) VALUES
-(1, 'Lyra Janelle', 'Pilapil', 'Oleta', 'luraloo@123', '$2y$10$7aQYxsgVglIawKN6IDx2lOwDmjosg.RFdxTAPGPF7JG3reVOYJnVO', '09658323208', 'Blk 2, Lt 22', 'San Cristobal', 'Calamba', 'Laguna', '4027', 2, 'assets/user.jpg');
-
---
 -- Indexes for dumped tables
 --
 
@@ -251,13 +244,6 @@ INSERT IGNORE INTO `product_variants` (`product_id`,`size`,`color`,`stock_quanti
   (2,'S','Black',6),(2,'M','Black',10),(2,'L','Black',8),(2,'XL','Black',5),
   (3,'M','Gray',7),(3,'L','Gray',9),(3,'XL','Gray',4),
   (4,'One Size','Default',25);
-
--- Example order uses the existing demo user (user_id 1) from the users seed.
-INSERT IGNORE INTO `orders` (`order_id`,`order_number`,`user_id`,`status`,`payment_method`,`payment_status`,`subtotal`,`vat_amount`,`shipping_fee`,`total_amount`,`shipping_name`,`shipping_contact`,`shipping_address`,`placed_at`) VALUES
-  (1,'ORD-2026-001',1,'Completed','gcash','Paid',500.00,53.58,30.00,530.00,'Lyra Janelle Oleta','09658323208','Blk 2, Lt 22, San Cristobal, Calamba, Laguna 4027','2026-10-26 09:30:00');
-
-INSERT IGNORE INTO `order_items` (`order_item_id`,`order_id`,`product_id`,`variant_id`,`product_name`,`size`,`color`,`unit_price`,`quantity`,`line_total`) VALUES
-  (1,1,1,2,'CodeBreaker T-Shirt','M','Black',250.00,2,500.00);
 
 COMMIT;
 

@@ -388,7 +388,8 @@ $escape = function ($value) {
 
 <!-- Russian Nesting Doll Layout -->
 
-<body class="customer-page customer-account-page vh-100 overflow-hidden d-flex flex-column bg-light">
+<body class="customer-page customer-account-page vh-100 overflow-hidden d-flex flex-column bg-light"
+    data-customer-id="<?php echo (int) $userId; ?>">
 
     <!-- HEADER CONTAINER -->
     <header
@@ -709,7 +710,7 @@ $escape = function ($value) {
 
     <!-- Custom JavaScript file -->
     <script src="backend/app.js?v=password-visibility-1"></script>
-    <script src="backend/cstmr.js?v=profile-crop-2"></script>
+    <script src="backend/cstmr.js?v=customer-reset-state-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>

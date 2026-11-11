@@ -22,7 +22,8 @@
     </script>
 </head>
 
-<body class="customer-page customer-cart-page vh-100 overflow-hidden d-flex flex-column bg-light">
+<body class="customer-page customer-cart-page vh-100 overflow-hidden d-flex flex-column bg-light"
+    data-customer-id="<?php echo (int) $userId; ?>">
 
     <!-- HEADER CONTAINER WITH INTEGRATED NAVIGATION -->
     <header class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 gap-3 bg-white border-bottom">
@@ -266,7 +267,7 @@
         </div>
     </div>
 
-    <script src="backend/cstmr.js?v=cart-id-verification-1"></script>
+    <script src="backend/cstmr.js?v=customer-reset-state-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>

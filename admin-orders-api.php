@@ -163,9 +163,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $stockLookup->close();
         }
-        $updateStmt = $conn->prepare('UPDATE orders SET status = ? WHERE order_id = ?');
+        $updateStmt = $conn->prepare(
+            "UPDATE orders
+             SET status = ?, payment_status = CASE WHEN ? = 'Completed' THEN 'Paid' ELSE payment_status END
+             WHERE order_id = ?"
+        );
         if (!$updateStmt) throw new Exception('Unable to prepare status update.');
-        $updateStmt->bind_param('si', $status, $orderId);
+        $updateStmt->bind_param('ssi', $status, $status, $orderId);
         if (!$updateStmt->execute()) throw new Exception('Unable to update order status.');
         $updateStmt->close();
         if ($oldStatus !== $status && !createNotification(

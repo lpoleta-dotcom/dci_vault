@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>DCI Vault | Admin Sign In</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style/style.css?v=admin-theme-4">
+    <link rel="stylesheet" href="style/style.css?v=admin-login-rings-1">
     <script>
         window.addEventListener('pageshow', function (event) {
             var perfEntries = window.performance && typeof window.performance.getEntriesByType === 'function'

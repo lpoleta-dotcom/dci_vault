@@ -3,10 +3,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.persisted) window.location.reload();
     });
 
+    const storageResetVersion = 'customer-state-reset-v1';
+    if (localStorage.getItem('dci-vault-data-reset-version') !== storageResetVersion) {
+        for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+            if (localStorage.key(index)?.startsWith('tindatrack.')) {
+                localStorage.removeItem(localStorage.key(index));
+            }
+        }
+        for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+            if (sessionStorage.key(index)?.startsWith('tindatrack.')) {
+                sessionStorage.removeItem(sessionStorage.key(index));
+            }
+        }
+        localStorage.setItem('dci-vault-data-reset-version', storageResetVersion);
+    }
+
+    const customerStoragePrefix = `tindatrack.customer.${document.body.dataset.customerId}`;
     const keys = {
-        cart: 'tindatrack.cart',
-        orders: 'tindatrack.orders',
-        profile: 'tindatrack.profile'
+        cart: `${customerStoragePrefix}.cart`,
+        profile: `${customerStoragePrefix}.profile`
     };
     const currency = new Intl.NumberFormat('en-PH', {
         style: 'currency',
@@ -205,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const image = document.createElement('img');
                 image.src = view.src;
                 image.alt = `${selectedProduct.name} ${view.label.toLowerCase()} view`;
-                image.className = 'd-block w-100 object-fit-cover h-100';
+                image.className = 'd-block';
                 slide.append(image);
                 return slide;
             }));
@@ -637,71 +652,40 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupOrders() {
         const list = document.getElementById('orderListContainer');
         if (!list) return;
+        list.replaceChildren();
         const filters = Array.from(document.querySelectorAll('#orderFilterTab button'));
-        const stored = read(keys.orders);
-        const orders = Array.isArray(stored) ? stored.map(order => {
-            const itemSubtotal = Array.isArray(order.items)
-                ? order.items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0)
-                : 0;
-            const subtotal = Number(order.subtotal) || itemSubtotal;
-            const vat = Number(order.vat) || calculateCartVat(order.items || []);
-            const shipping = order.shipping === undefined ? 30 : Number(order.shipping);
-            return { ...order, subtotal, vat, shipping, total: subtotal + shipping };
-        }) : [];
         const statusClass = status => {
             const normalized = String(status).toLowerCase();
             if (normalized === 'completed') return 'bg-success bg-opacity-10 text-success border-success';
             if (normalized === 'cancelled') return 'bg-danger bg-opacity-10 text-danger border-danger';
             return 'bg-primary bg-opacity-10 text-primary border-primary';
         };
-        orders.slice().reverse().forEach(order => {
-            const card = document.createElement('article');
-            card.className = 'card border-0 shadow-sm p-4 bg-white';
-            card.dataset.status = order.status;
-            card.dataset.orderId = String(order.order_id);
-            const canCancel = order.status === 'Processing'
-                && Number.isSafeInteger(Number(order.order_id))
-                && Number(order.order_id) > 0;
-            const preview = order.items?.[0];
-            const orderLabel = String(order.id).startsWith('ORD-') ? order.id : `ORD-2026-${String(order.id).padStart(3, '0')}`;
-            card.innerHTML = `<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
-                <div><span class="fw-bold text-dark">Order #${escapeHtml(orderLabel)}</span><span class="text-muted small ms-2">Placed on ${escapeHtml(order.date)}</span></div>
-                <span class="badge ${statusClass(order.status)} border px-3 py-2 rounded-pill">${escapeHtml(order.status)}</span></div>
-                ${preview ? `<div class="d-flex align-items-center gap-3 mb-3"><img src="${escapeHtml(preview.image || 'assets/product.jpg')}" alt="" class="rounded object-fit-cover" style="width:65px;height:65px"><div class="flex-grow-1"><h6 class="mb-0 fw-semibold">${escapeHtml(preview.name)}</h6><small class="text-muted">Size: ${escapeHtml(preview.size)} | Qty: ${Number(preview.quantity)}</small></div><strong>${money(preview.price * preview.quantity)}</strong></div>` : ''}
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3"><div><small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">${escapeHtml(order.payment)}</span></small><div class="h6 fw-bold mb-0 mt-1">Total Amount: ${money(order.total)}</div></div><div class="d-flex gap-2"><button type="button" class="view-order-btn btn btn-dark btn-sm px-3" data-order='${escapeHtml(JSON.stringify(order))}'>View Details</button>${canCancel ? `<button type="button" class="cancel-order-btn btn btn-outline-danger btn-sm px-3" data-order-id="${Number(order.order_id)}">Cancel Order</button>` : ''}</div></div>`;
-            list.prepend(card);
-        });
-
         const modalElement = document.getElementById('orderDetailsModal');
         const modal = modalElement && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+        const cancelModalElement = document.getElementById('cancelOrderModal');
+        const cancelModal = cancelModalElement && window.bootstrap ? bootstrap.Modal.getOrCreateInstance(cancelModalElement) : null;
+        const cancelOrderNumber = document.getElementById('cancelOrderNumber');
+        const confirmCancelOrderButton = document.getElementById('confirmCancelOrderBtn');
+        let pendingCancelButton = null;
+        let cancellationInProgress = false;
         list.addEventListener('click', event => {
             const button = event.target.closest('.view-order-btn');
             if (!button || !modal) return;
+            if (!button.dataset.order) {
+                notify('Order details are unavailable. Refresh the page and try again.');
+                return;
+            }
             let order;
             const card = button.closest('.card');
-            if (button.dataset.order) order = JSON.parse(button.dataset.order);
-            else {
-                const item = card.querySelector('.d-flex.align-items-center.gap-3.mb-3');
-                const text = item?.querySelector('.flex-grow-1');
-                order = {
-                    id: button.dataset.orderId || '000',
-                    date: button.dataset.orderDate || '',
-                    status: button.dataset.orderStatus || 'Processing',
-                    payment: button.dataset.orderPayment || 'GCash',
-                    subtotal: Number((button.dataset.orderSubtotal || '').replace(/[^\d.]/g, '')) || 0,
-                    shipping: Number((button.dataset.orderShipping || '').replace(/[^\d.]/g, '')) || 30,
-                    items: [{
-                        name: text?.querySelector('h6')?.textContent.trim() || 'Classic T-Shirt',
-                        size: (text?.querySelector('small')?.textContent.match(/Size:\s*([^|]+)/) || [,'M'])[1].trim(),
-                        quantity: Number((text?.querySelector('small')?.textContent.match(/Qty:\s*(\d+)/) || [,'1'])[1]),
-                        price: 250
-                    }]
-                };
-                order.vat = Number((button.dataset.orderVat || '').replace(/[^\d.]/g, '')) || calculateCartVat(order.items);
-                order.total = order.subtotal + order.shipping;
+            try {
+                order = JSON.parse(button.dataset.order);
+            } catch (error) {
+                console.error('Unable to read customer order details.', error);
+                notify('Order details are unavailable. Refresh the page and try again.');
+                return;
             }
             if (card?.dataset.status) order.status = card.dataset.status;
-            document.getElementById('modalOrderId').textContent = `#${String(order.id).startsWith('ORD-') ? order.id : `ORD-2026-${String(order.id).padStart(3, '0')}`}`;
+            document.getElementById('modalOrderId').textContent = `#${order.id}`;
             document.getElementById('modalOrderDate').textContent = order.date;
             const status = document.getElementById('modalOrderstatus');
             status.textContent = order.status;
@@ -720,10 +704,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             modal.show();
         });
-        list.addEventListener('click', async event => {
+        list.addEventListener('click', event => {
             const cancelButton = event.target.closest('.cancel-order-btn');
             if (!cancelButton || cancelButton.disabled) return;
-            if (!window.confirm('Are you sure you want to cancel this order?')) return;
+            if (!cancelModal || !cancelOrderNumber || !confirmCancelOrderButton) {
+                notify('Unable to open the order cancellation prompt. Please reload the page and try again.');
+                return;
+            }
+            pendingCancelButton = cancelButton;
+            const orderHeading = cancelButton.closest('article')?.querySelector('.fw-bold.text-dark');
+            cancelOrderNumber.textContent = orderHeading?.textContent.replace(/^Order\s*/i, '') || 'this order';
+            confirmCancelOrderButton.disabled = false;
+            cancelModal.show();
+        });
+        confirmCancelOrderButton?.addEventListener('click', async () => {
+            const cancelButton = pendingCancelButton;
+            if (!cancelButton || cancelButton.disabled || cancellationInProgress) return;
+
+            cancellationInProgress = true;
+            confirmCancelOrderButton.disabled = true;
             cancelButton.disabled = true;
             try {
                 const response = await fetch('customer-orders-api.php', {
@@ -749,10 +748,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         card.classList.add('d-none');
                     }
                 }
+                pendingCancelButton = null;
+                cancelModal.hide();
             } catch (error) {
-                window.alert(error.message || 'Unable to cancel the order.');
+                notify(error.message || 'Unable to cancel the order.');
                 cancelButton.disabled = false;
+                confirmCancelOrderButton.disabled = false;
+            } finally {
+                cancellationInProgress = false;
             }
+        });
+        cancelModalElement?.addEventListener('hidden.bs.modal', () => {
+            if (!cancellationInProgress) pendingCancelButton = null;
         });
         filters.forEach(button => button.addEventListener('click', () => {
             const filter = button.id === 'all-tab' ? 'all' : button.textContent.trim().toLowerCase();
@@ -802,7 +809,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     Array.from(list.children).forEach(card => card.classList.toggle('d-none', card.dataset.status.toLowerCase() !== filter));
                 }
             })
-            .catch(error => console.error('Unable to load customer orders from the database.', error));
+            .catch(error => {
+                console.error('Unable to load customer orders from the database.', error);
+                const message = document.createElement('div');
+                message.className = 'card border-0 shadow-sm p-4 text-center text-danger';
+                message.textContent = 'Unable to load your orders. Refresh the page to try again.';
+                list.replaceChildren(message);
+            });
     }
 
     function setupAccount() {
@@ -1038,7 +1051,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         document.getElementById('logoutBtn')?.addEventListener('click', () => {
-            sessionStorage.removeItem('tindatrack.session');
+            for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+                if (localStorage.key(index)?.startsWith('tindatrack.')) {
+                    localStorage.removeItem(localStorage.key(index));
+                }
+            }
+            for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+                if (sessionStorage.key(index)?.startsWith('tindatrack.')) {
+                    sessionStorage.removeItem(sessionStorage.key(index));
+                }
+            }
         });
     }
 
