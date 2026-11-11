@@ -1,8 +1,4 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
@@ -13,13 +9,34 @@ function respond($status, $payload)
     exit();
 }
 
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'admin-api-session.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    respond(200, ['csrf_token' => $_SESSION['admin_csrf_token']]);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Allow: POST');
+    header('Allow: GET, POST');
     respond(405, ['message' => 'Method not allowed.']);
 }
 
-if ((int) ($_SESSION['position'] ?? 0) !== 2) {
-    respond(403, ['message' => 'Administrator access is required.']);
+$expectedOrigin = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
+    . '://' . ($_SERVER['HTTP_HOST'] ?? '');
+if (
+    empty($_SERVER['HTTP_ORIGIN']) ||
+    $expectedOrigin === '://' ||
+    !hash_equals($expectedOrigin, $_SERVER['HTTP_ORIGIN'])
+) {
+    respond(403, ['message' => 'Request origin could not be verified. Refresh the page and try again.']);
+}
+
+if (!hash_equals($_SESSION['admin_csrf_token'], $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+    respond(403, ['message' => 'Your session expired. Refresh the page and try again.']);
+}
+
+$contentType = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
+if ($contentType !== 'application/json') {
+    respond(415, ['message' => 'Account details must be sent as JSON.']);
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -43,11 +60,17 @@ $role = filter_var($input['role'] ?? null, FILTER_VALIDATE_INT);
 
 if (
     $firstName === '' || $lastName === '' || $username === '' ||
-    $phone === '' || $street === '' || $barangay === '' ||
-    $city === '' || $province === '' || $postal === '' ||
+    $phone === '' ||
     !in_array($role, [1, 2], true)
 ) {
     respond(422, ['message' => 'Complete all required account details and choose a valid role.']);
+}
+
+if (
+    $role === 1 &&
+    ($street === '' || $barangay === '' || $city === '' || $province === '' || $postal === '')
+) {
+    respond(422, ['message' => 'Customer accounts require complete address details.']);
 }
 
 if (strlen($password) < 8) {
@@ -57,8 +80,6 @@ if (strlen($password) < 8) {
 if ($password !== $confirmPassword) {
     respond(422, ['field' => 'confirm_password', 'message' => 'Passwords do not match.']);
 }
-
-require_once __DIR__ . DIRECTORY_SEPARATOR . 'connect.php';
 
 $checkStmt = $conn->prepare('SELECT user_id FROM users WHERE username = ?');
 if ($checkStmt === false) {

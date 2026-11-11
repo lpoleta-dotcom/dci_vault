@@ -12,11 +12,12 @@ $catalogProducts = [];
 $catalogContains = static function ($value, $part) {
     return strpos((string) $value, (string) $part) !== false;
 };
-$productResult = $conn->query("SELECT p.product_id, p.name, p.description, p.price, c.name AS category_name, c.slug AS category_slug FROM products p LEFT JOIN categories c ON c.category_id = p.category_id WHERE p.is_active = 1 ORDER BY FIELD(c.slug, 'tshirt', 'bottom', 'outerwear', 'accessory'), p.name");
+$productResult = $conn->query("SELECT p.product_id, p.name, p.description, p.price, c.name AS category_name, c.slug AS category_slug FROM products p JOIN categories c ON c.category_id = p.category_id WHERE p.is_active = 1 AND c.is_active = 1 ORDER BY FIELD(c.slug, 'tshirt', 'bottom', 'outerwear', 'accessory'), p.name");
 if ($productResult) {
     while ($product = $productResult->fetch_assoc()) {
         $product['images'] = ['front' => '', 'back' => '', 'side' => ''];
         $product['sizes'] = [];
+        $product['variants'] = [];
         $catalogProducts[(int) $product['product_id']] = $product;
     }
 }
@@ -35,12 +36,22 @@ if ($imageResult) {
     }
 }
 
-$variantResult = $conn->query('SELECT product_id, size FROM product_variants WHERE is_active = 1 ORDER BY product_id, size');
+$variantResult = $conn->query(
+    'SELECT product_id, size, SUM(stock_quantity) AS stock_quantity
+     FROM product_variants
+     WHERE is_active = 1
+     GROUP BY product_id, size
+     ORDER BY product_id, size'
+);
 if ($variantResult) {
     while ($variant = $variantResult->fetch_assoc()) {
         $id = (int) $variant['product_id'];
-        if (isset($catalogProducts[$id]) && !in_array($variant['size'], $catalogProducts[$id]['sizes'], true)) {
+        if (isset($catalogProducts[$id])) {
             $catalogProducts[$id]['sizes'][] = $variant['size'];
+            $catalogProducts[$id]['variants'][] = [
+                'size' => $variant['size'],
+                'stock' => (int) $variant['stock_quantity']
+            ];
         }
     }
 }
@@ -67,7 +78,6 @@ foreach ($catalogProducts as &$product) {
         }
     }
     if ($product['images']['front'] === '') $product['images']['front'] = $product['images']['back'] ?: ($product['images']['side'] ?: 'assets/placeholder.jpg');
-    if (!$product['sizes']) $product['sizes'] = ['One Size'];
 }
 unset($product);
 
@@ -88,7 +98,8 @@ $catalogEscape = static function ($value) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <link rel="stylesheet" href="style/style.css?v=customer-modal-carousel-5">
+    <script src="backend/session-history.js"></script>
     <script>
         (function () {
             try {
@@ -101,15 +112,20 @@ $catalogEscape = static function ($value) {
 </head>
 
 <!-- Russian Nesting Doll Layout: Locks screen height and prevents double scrollbars -->
-<body class="customer-page customer-products-page vh-100 overflow-hidden d-flex flex-column bg-light">
+<body class="customer-page customer-products-page vh-100 overflow-hidden d-flex flex-column bg-light"
+    data-customer-id="<?php echo (int) $userId; ?>">
 
     <!-- HEADER CONTAINER WITH INTEGRATED NAVIGATION -->
     <header class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 gap-3 bg-white border-bottom">
         
         <!-- Brand Logo / Title -->
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
-            <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
+            </a>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            </a>
         </div>
 
         <!-- Top Navigation Links (Aligned to DCI Tech Blue Palette) -->
@@ -128,21 +144,21 @@ $catalogEscape = static function ($value) {
             </a>
         </nav>
 
-        <!-- Customer Profile / Account Section & Logout -->
-        <div class="d-flex align-items-center gap-3">
-            <div class="user-profile d-flex align-items-center gap-2">
-                <div class="d-flex flex-column text-end lh-sm">
-                    <a id="userName" data-session-managed="true" class="mb-0 fs-6 fw-bold text-decoration-none text-dark" href="cstmr-account.php"><?php echo $customerEscape($profileName); ?></a>
-                    <small id="userStatus" class="text-secondary">Active Shopper</small>
-                </div>
-                <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="User Avatar" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
-            </div>
+        <?php $notificationRole = 'customer'; require __DIR__ . DIRECTORY_SEPARATOR . 'notification-widget.php'; ?>
 
-            <!-- Logout Button Icon / Link -->
-            <a id="logoutBtn" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 px-2 py-1" href="logout.php" title="Log Out">
-                <i class="bi bi-box-arrow-right fs-6"></i>
-                <span class="d-none d-lg-inline">Log Out</span>
-            </a>
+        <div class="customer-header-actions d-flex align-items-center gap-2">
+            <div class="dropdown">
+                <button class="customer-profile-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile menu">
+                    <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
+                    <span id="userName" data-session-managed="true" class="customer-profile-name"><?php echo $customerEscape($profileName); ?></span>
+                    <i class="bi bi-chevron-down customer-profile-chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end customer-profile-menu">
+                    <li><a class="dropdown-item" href="cstmr-account.php"><i class="bi bi-person me-2" aria-hidden="true"></i>View Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a id="logoutBtn" class="dropdown-item customer-logout-item" href="logout.php"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Log Out</a></li>
+                </ul>
+            </div>
         </div>
     </header>
 
@@ -181,7 +197,7 @@ $catalogEscape = static function ($value) {
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-2 text-dark" data-bs-toggle="pill"
-                            data-category="tshirt">T-Shirt</button>
+                            data-category="tshirt">Tops</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-2 text-dark" data-bs-toggle="pill"
@@ -193,7 +209,7 @@ $catalogEscape = static function ($value) {
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link btn-sm px-3 py-2 text-dark" data-bs-toggle="pill"
-                            data-category="accessory">Accessory</button>
+                            data-category="accessory">Accessories</button>
                     </li>
                 </ul>
             </div>
@@ -207,6 +223,11 @@ $catalogEscape = static function ($value) {
                         $imageBack = $product['images']['back'];
                         $imageSide = $product['images']['side'];
                         $sizes = implode(',', $product['sizes']);
+                        $variants = json_encode($product['variants'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
+                        $hasStock = false;
+                        foreach ($product['variants'] as $variant) {
+                            if ($variant['stock'] > 0) $hasStock = true;
+                        }
                         ?>
                         <div class="col-6 col-md-4 col-lg-3 col-xl-2">
                             <div class="productBox h-100 d-flex flex-column product-card card border-0 shadow-sm p-3 bg-white"
@@ -216,6 +237,7 @@ $catalogEscape = static function ($value) {
                                 data-price="<?php echo $catalogEscape($product['price']); ?>"
                                 data-description="<?php echo $catalogEscape($product['description'] ?? ''); ?>"
                                 data-sizes="<?php echo $catalogEscape($sizes); ?>"
+                                data-variants="<?php echo $catalogEscape($variants); ?>"
                                 data-img-front="<?php echo $catalogEscape($imageFront); ?>"
                                 data-img-back="<?php echo $catalogEscape($imageBack); ?>"
                                 data-img-side="<?php echo $catalogEscape($imageSide); ?>">
@@ -223,7 +245,8 @@ $catalogEscape = static function ($value) {
                                     <img src="<?php echo $catalogEscape($imageFront); ?>" class="card-img-top object-fit-cover rounded mb-2" alt="<?php echo $catalogEscape($product['name']); ?> front view" style="height: 180px;">
                                     <h4 class="productName fs-6 mb-1 text-truncate fw-semibold text-dark p-0"><?php echo $catalogEscape($product['name']); ?></h4>
                                     <h5 class="productPrice fs-6 mb-3 p-0"><?php echo $catalogEscape($product['price']); ?></h5>
-                                    <button type="button" class="productBuyButton btn btn-sm mt-auto add-to-cart-btn fw-semibold w-100 m-0">View Product</button>
+                                    <?php if (!$hasStock): ?><small class="text-danger mb-2">Out of stock</small><?php endif; ?>
+                                    <button type="button" class="productBuyButton btn btn-sm mt-auto add-to-cart-btn fw-semibold w-100 m-0" <?php echo $hasStock ? '' : 'disabled'; ?>>View Product</button>
                                 </div>
                             </div>
                         </div>
@@ -247,8 +270,8 @@ $catalogEscape = static function ($value) {
                                 <!-- Left: Image Carousel -->
                                 <div class="col-md-6">
                                     <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
-                                        <div id="productModalImages" class="carousel-inner rounded overflow-hidden modal-carousel-inner" style="height: 280px;">
-                                            <div class="carousel-item active h-100"><img src="assets/placeholder.jpg" class="d-block w-100 object-fit-cover h-100" alt="Product view"></div>
+                                        <div id="productModalImages" class="carousel-inner rounded overflow-hidden modal-carousel-inner">
+                                            <div class="carousel-item active h-100"><img src="assets/placeholder.jpg" class="d-block" alt="Product view"></div>
                                         </div>
                                         <button class="carousel-control-prev" type="button"
                                             data-bs-target="#productCarousel" data-bs-slide="prev">
@@ -303,7 +326,7 @@ $catalogEscape = static function ($value) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/cstmr.js?v=order-max-99"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/cstmr.js?v=customer-reset-state-1"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 </html>

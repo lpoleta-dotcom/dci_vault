@@ -35,10 +35,17 @@
         button.id = 'themeToggle';
         const header = document.querySelector('.main-header');
         const profile = header?.querySelector('.user-profile');
+        const adminActions = header?.closest('.admin-page')?.querySelector('.admin-header-actions');
+        const customerNotification = header?.closest('.customer-page')?.querySelector('.notification-widget');
         const slot = document.getElementById('themeToggleSlot');
         button.className = `theme-toggle btn${header ? '' : ' theme-toggle-floating'}`;
         button.setAttribute('aria-pressed', String(initialTheme === 'dark'));
-        if (slot) {
+        if (adminActions) {
+            if (profile?.parentElement === adminActions) adminActions.insertBefore(button, profile);
+            else adminActions.append(button);
+        } else if (customerNotification?.parentElement === header) {
+            header.insertBefore(button, customerNotification.nextSibling);
+        } else if (slot) {
             slot.append(button);
         } else if (profile) {
             const nameBlock = profile.querySelector('div');

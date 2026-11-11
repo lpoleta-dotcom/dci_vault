@@ -2,6 +2,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentLogo = document.getElementById('departmentLogo');
     const landingScrollPanel = document.querySelector('.landing-page .main-control');
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const landingHero = document.querySelector('.landing-hero');
+    const landingHeroParticles = landingHero?.querySelector('.landing-hero-particles');
+
+    if (landingHero && landingHeroParticles && !prefersReducedMotion.matches) {
+        const particles = Array.from({ length: 10 }, () => document.createElement('span'));
+        landingHeroParticles.append(...particles);
+
+        const trackPointer = event => {
+            if (prefersReducedMotion.matches || event.pointerType === 'touch') return;
+
+            const bounds = landingHero.getBoundingClientRect();
+            landingHeroParticles.style.setProperty('--cursor-x', `${event.clientX - bounds.left}px`);
+            landingHeroParticles.style.setProperty('--cursor-y', `${event.clientY - bounds.top}px`);
+            landingHero.classList.add('is-tracking-pointer');
+        };
+        const stopTracking = () => landingHero.classList.remove('is-tracking-pointer');
+
+        landingHero.addEventListener('pointermove', trackPointer, { passive: true });
+        landingHero.addEventListener('pointerleave', stopTracking);
+        prefersReducedMotion.addEventListener('change', event => {
+            if (event.matches) stopTracking();
+        });
+    }
+
     if (departmentLogo && landingScrollPanel && !prefersReducedMotion.matches) {
         let logoFrame = 0;
         const syncLogoWithScroll = () => {

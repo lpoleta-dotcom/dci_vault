@@ -1,20 +1,36 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
+
+$authCsrfToken = $_SESSION['auth_csrf_token'] ?? '';
+if ($authCsrfToken === '') {
+    $authCsrfToken = bin2hex(random_bytes(32));
+    $_SESSION['auth_csrf_token'] = $authCsrfToken;
 }
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
-header('Expires: 0');
+header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: cstmr-prod.php');
-    exit();
+    if ((int) ($_SESSION['position'] ?? 0) === 2) {
+        header('Location: admin-dashboard.php');
+        exit();
+    } elseif ((int) ($_SESSION['position'] ?? 0) === 1) {
+        header('Location: cstmr-prod.php');
+        exit();
+    }
 }
 
-$loginError = ($_GET['error'] ?? '') === 'invalid'
-    ? 'Invalid username or password.'
-    : '';
+$loginError = '';
+if (($_GET['error'] ?? '') === 'invalid') {
+    $loginError = 'Invalid username or password.';
+} elseif (($_GET['error'] ?? '') === 'unavailable') {
+    $loginError = 'Sign-in is temporarily unavailable. Please try again.';
+} elseif (($_GET['error'] ?? '') === 'session') {
+    $loginError = 'Your session expired. Refresh the page and try again.';
+}
+$adminLoginRequired = ($_GET['error'] ?? '') === 'admin_login_required';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,6 +46,22 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <script>
+        window.addEventListener('pageshow', function (event) {
+            var perfEntries = window.performance && typeof window.performance.getEntriesByType === 'function'
+                ? window.performance.getEntriesByType('navigation')
+                : null;
+            var isBackForward = (perfEntries && perfEntries[0] && perfEntries[0].type === 'back_forward')
+                || (window.performance && window.performance.navigation && window.performance.navigation.type === 2);
+            if (event.persisted || isBackForward) {
+                var loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.reset();
+                }
+                window.location.replace(window.location.href);
+            }
+        });
+    </script>
     <style>
         .login-page {
             min-height: calc(100vh - 65px);
@@ -262,18 +294,19 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
         style="min-height: 65px;">
 
         <!-- Brand Logo / Title -->
-        <div class="main-name d-flex align-items-center gap-2">
+        <a class="main-name d-flex align-items-center gap-2 text-decoration-none" href="index.html"
+            aria-label="DCI Vault home">
             <img src="assets/logo.png" alt="DCI Vault" class="brand-logo rounded border" width="40" height="40">
             <span class="fw-bold fs-5 text-dark">DCI Vault</span>
-            <span id="themeToggleSlot" class="ms-2"></span>
-        </div>
+        </a>
 
         <!-- Navigation Action -->
-        <div class="ms-auto me-2">
+        <div class="d-flex align-items-center gap-2 ms-auto">
             <a href="index.html"
                 class="btn btn-outline-dark px-3 fw-semibold shadow-sm d-flex align-items-center gap-1">
                 <i class="bi bi-bag me-1"></i><span>Continue shopping</span>
             </a>
+            <span id="themeToggleSlot" class="d-inline-flex align-items-center ms-1"></span>
         </div>
     </header>
 
@@ -313,13 +346,14 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
                     </div>
 
                     <form id="loginForm" action="account.php" method="post">
+                        <input type="hidden" name="auth_csrf_token" value="<?php echo htmlspecialchars($authCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="login-field mb-3">
                             <label for="nameInput" class="form-label small fw-semibold text-secondary">Username</label>
                             <div class="input-group">
                                 <span class="input-group-text border-end-0" aria-hidden="true"><i
                                         class="bi bi-person"></i></span>
                                 <input type="text" class="form-control border-start-0 shadow-none" id="nameInput"
-                                    name="uName" placeholder="Enter your username" autocomplete="username" required>
+                                    name="uName" placeholder="Enter your username" autocomplete="username" maxlength="50" required>
                             </div>
                         </div>
 
@@ -331,7 +365,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
                                         class="bi bi-lock"></i></span>
                                 <input type="password" class="form-control border-start-0 border-end-0 shadow-none"
                                     id="passwordInput" name="pWord" placeholder="Enter your password"
-                                    autocomplete="current-password" required>
+                                    autocomplete="current-password" maxlength="72" required>
                                 <button type="button" class="password-toggle btn btn-outline-secondary"
                                     id="passwordToggle" aria-label="Show password" aria-pressed="false"
                                     data-password-toggle="passwordInput">
@@ -341,7 +375,13 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
                         </div>
 
                         <div id="inputResponse" class="text-danger small mb-3 text-center" role="alert"
-                            aria-live="polite"><?php echo htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8'); ?></div>
+                            aria-live="polite">
+                            <?php if ($adminLoginRequired): ?>
+                                Admin privileges detected. Please switch to the Administrator Portal to sign in.
+                            <?php else: ?>
+                                <?php echo htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8'); ?>
+                            <?php endif; ?>
+                        </div>
 
                         <button type="submit" id="loginButton" name="logIn" value="1"
                             class="login-submit btn text-white w-100 fw-semibold py-2 shadow-sm"
@@ -367,7 +407,7 @@ $loginError = ($_GET['error'] ?? '') === 'invalid'
 
     <script src="backend/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>

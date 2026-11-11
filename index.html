@@ -11,7 +11,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=dark-all-14">
+    <link rel="stylesheet" href="style/style.css?v=landing-motion-19">
+    <style>
+        :root[data-theme="dark"] .landing-page #productGridSection h2 {
+            color: #E5EDF8 !important;
+        }
+
+        :root[data-theme="dark"] .landing-page #categoryFilter .nav-link.active {
+            color: #FFFFFF !important;
+            background-color: #315FE8 !important;
+            border-color: #315FE8 !important;
+            box-shadow: 0 4px 12px rgba(49, 95, 232, 0.35);
+        }
+
+        :root[data-theme="dark"] .landing-page #categoryFilter .nav-link:hover:not(.active) {
+            color: #E5EDF8 !important;
+            background-color: #263A58 !important;
+            border-color: #405573;
+        }
+    </style>
     <script>
         (function () {
             try {
@@ -49,6 +67,8 @@
         <main class="main-control flex-grow-1 d-flex flex-column overflow-y-auto p-4">
             <div class="landing-content mx-auto w-100">
                 <section class="landing-hero mb-5">
+                    <span class="landing-hero-orb" aria-hidden="true"></span>
+                    <span class="landing-hero-particles" aria-hidden="true"></span>
                     <div class="row align-items-center g-4 position-relative">
                         <div class="col-lg-7">
                             <span class="landing-eyebrow"><i class="bi bi-bag-check me-2"></i>OFFICIAL DCI MERCH &
@@ -94,7 +114,7 @@
                         <div>
                             <span class="landing-section-kicker">THE COLLECTION</span>
                             <h2 id="catalogHeading" class="h2 fw-bold text-dark mb-1">Find your fit</h2>
-                            <p class="text-secondary mb-0">A few favorites to get you started. Prices include 12% VAT.</p>
+                            <p class="text-secondary mb-0">Browse the complete collection. Prices include 12% VAT.</p>
                         </div>
 
                         <ul class="nav nav-pills flex-nowrap gap-1 p-1 bg-white landing-category-filter"
@@ -105,7 +125,7 @@
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" type="button" data-bs-toggle="pill"
-                                    data-category="tshirt">T-shirts</button>
+                                    data-category="tshirt">Tops</button>
                             </li>
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link" type="button" data-bs-toggle="pill"
@@ -167,7 +187,7 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/app.js?v=department-logo-6"></script>
+    <script src="backend/app.js?v=hero-cursor-orbs-7"></script>
     <script src="backend/theme.js?v=6"></script>
 </body>
 

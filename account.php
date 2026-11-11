@@ -1,117 +1,218 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
 
 require_once 'connect.php';
+
+if (isset($_POST['signUp']) || isset($_POST['logIn'])) {
+    $submittedToken = $_POST['auth_csrf_token'] ?? '';
+    if (
+        !is_string($submittedToken) ||
+        empty($_SESSION['auth_csrf_token']) ||
+        !hash_equals($_SESSION['auth_csrf_token'], $submittedToken)
+    ) {
+        if (isset($_POST['signUp'])) {
+            $_SESSION['signup_error'] = 'Your session expired. Refresh the page and try again.';
+            header('Location: sign-up.php');
+        } else {
+            header('Location: login.php?error=session');
+        }
+        exit();
+    }
+}
+
+$postString = function ($key) {
+    return isset($_POST[$key]) && is_string($_POST[$key]) ? trim($_POST[$key]) : '';
+};
 
 // ---------------------------------------------------------------------
 // SIGN-UP LOGIC
 // ---------------------------------------------------------------------
 if (isset($_POST['signUp'])) {
-    $firstName  = trim($_POST['fName']);
-    $middleName = trim($_POST['mName']);
-    $lastName   = trim($_POST['lName']);
-    $userName   = trim($_POST['uName']);
-    $conNumber  = trim($_POST['conNumber']);
-    $addStreet  = trim($_POST['addStreet']);
-    $addBrgy    = trim($_POST['addBrgy']);
-    $addCity    = trim($_POST['addCity']);
-    $addProv    = trim($_POST['addProv']);
-    $addPost    = trim($_POST['addPost']);
-    $pWord      = $_POST['pWord'] ?? '';
-    $confirmPassword = $_POST['confirmPassword'] ?? '';
+    $firstName = $postString('fName');
+    $middleName = $postString('mName');
+    $lastName = $postString('lName');
+    $userName = $postString('uName');
+    $conNumber = $postString('conNumber');
+    $addStreet = $postString('addStreet');
+    $addBrgy = $postString('addBrgy');
+    $addCity = $postString('addCity');
+    $addProv = $postString('addProv');
+    $addPost = $postString('addPost');
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'id-verification.php';
+    $pWord = isset($_POST['pWord']) && is_string($_POST['pWord']) ? $_POST['pWord'] : '';
+    $confirmPassword = isset($_POST['confirmPassword']) && is_string($_POST['confirmPassword'])
+        ? $_POST['confirmPassword']
+        : '';
 
-    if ($pWord !== $confirmPassword) {
-        $_SESSION['signup_error'] = 'Passwords do not match.';
-        header("Location: sign-up.php");
+    $signupError = '';
+    if (
+        $firstName === '' || $lastName === '' || $userName === '' ||
+        $conNumber === '' || $addStreet === '' || $addBrgy === '' ||
+        $addCity === '' || $addProv === '' || $addPost === ''
+    ) {
+        $signupError = 'Complete all required account details.';
+    } elseif (
+        strlen($firstName) > 100 || strlen($middleName) > 100 ||
+        strlen($lastName) > 100 || strlen($userName) > 50 ||
+        strlen($conNumber) > 20 || strlen($addStreet) > 150 ||
+        strlen($addBrgy) > 100 || strlen($addCity) > 100 ||
+        strlen($addProv) > 100 || strlen($addPost) > 10
+    ) {
+        $signupError = 'One or more account details exceed the allowed length.';
+    } elseif (!preg_match('/^[0-9+() .-]{7,20}$/', $conNumber)) {
+        $signupError = 'Enter a valid contact number.';
+    } elseif (!preg_match('/^[A-Za-z0-9 -]{1,10}$/', $addPost)) {
+        $signupError = 'Enter a valid postal code.';
+    } elseif (strlen($pWord) < 8 || strlen($pWord) > 72) {
+        $signupError = 'Password must be between 8 and 72 bytes.';
+    } elseif ($pWord !== $confirmPassword) {
+        $signupError = 'Passwords do not match.';
+    }
+
+    if ($signupError !== '') {
+        $_SESSION['signup_error'] = $signupError;
+        header('Location: sign-up.php');
         exit();
     }
 
-    if (strlen($pWord) < 8) {
-        $_SESSION['signup_error'] = 'Password must be at least 8 characters.';
-        header("Location: sign-up.php");
+    require_once __DIR__ . DIRECTORY_SEPARATOR . 'notifications-bootstrap.php';
+    if (!ensureNotificationTables($conn)) {
+        $_SESSION['signup_error'] = 'Account creation is temporarily unavailable.';
+        header('Location: sign-up.php');
         exit();
     }
 
-    // 1. Check if username exists (Matches user_id and username column)
-    $checkStmt = $conn->prepare("SELECT user_id FROM users WHERE username = ?");
-    if ($checkStmt === false) {
-        die("SELECT Prepare Error: " . $conn->error);
-    }
-
-    $checkStmt->bind_param("s", $userName);
-    $checkStmt->execute();
-    $result = $checkStmt->get_result();
-
-    if ($result->num_rows > 0) {
-        $checkStmt->close();
-        $_SESSION['signup_error'] = 'Username already exists. Please choose another username.';
-        header("Location: sign-up.php");
+    $pWordHash = password_hash($pWord, PASSWORD_DEFAULT);
+    if ($pWordHash === false) {
+        error_log('Unable to hash a new customer password.');
+        $_SESSION['signup_error'] = 'Account creation is temporarily unavailable.';
+        header('Location: sign-up.php');
         exit();
-    } else {
-        $checkStmt->close();
-
-        // 2. Hash password securely
-        $pWordHash = password_hash($pWord,PASSWORD_DEFAULT);
-
-        // 3. Insert user record with exact database column names
-        $insertQuery = "INSERT INTO users 
-            (first_name, middle_name, last_name, username, contact_no, street, barangay, city, province, postal, password) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $insertStmt = $conn->prepare($insertQuery);
-        if ($insertStmt === false) {
-            die("INSERT Prepare Error: " . $conn->error);
-        }
-
-        $insertStmt->bind_param(
-            "sssssssssss", 
-            $firstName, $middleName, $lastName, $userName, 
-            $conNumber, $addStreet, $addBrgy, $addCity, 
-            $addProv, $addPost, $pWordHash
-        );
-
-        if ($insertStmt->execute()) {
-            $insertStmt->close();
-            header("Location: login.php");
-            exit();
-        } else {
-            echo "Execution Error: " . $insertStmt->error;
-        }
     }
+    $insertStmt = $conn->prepare(
+        'INSERT INTO users
+            (first_name, middle_name, last_name, username, contact_no, street, barangay, city, province, postal, password, position, id_document, verification_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, \'Pending\')'
+    );
+    if ($insertStmt === false) {
+        error_log('Customer account insert prepare failed: ' . $conn->error);
+        $_SESSION['signup_error'] = 'Account creation is temporarily unavailable.';
+        header('Location: sign-up.php');
+        exit();
+    }
+    $idDocumentFilename = '';
+    $insertStmt->bind_param(
+        'ssssssssssss',
+        $firstName,
+        $middleName,
+        $lastName,
+        $userName,
+        $conNumber,
+        $addStreet,
+        $addBrgy,
+        $addCity,
+        $addProv,
+        $addPost,
+        $pWordHash,
+        $idDocumentFilename
+    );
+    if (!$conn->begin_transaction()) {
+        $insertStmt->close();
+        error_log('Unable to start customer account registration transaction.');
+        $_SESSION['signup_error'] = 'Account creation is temporarily unavailable.';
+        header('Location: sign-up.php');
+        exit();
+    }
+    $idDocumentFilename = storeVerificationIdUpload($_FILES['id_document'] ?? null, $idUploadError);
+    if ($idDocumentFilename === false) {
+        $insertStmt->close();
+        $conn->rollback();
+        $_SESSION['signup_error'] = $idUploadError;
+        header('Location: sign-up.php');
+        exit();
+    }
+    if (!$insertStmt->execute()) {
+        $duplicateUsername = $insertStmt->errno === 1062;
+        error_log('Customer account insert failed: ' . $insertStmt->error);
+        $insertStmt->close();
+        $conn->rollback();
+        deleteVerificationIdUpload($idDocumentFilename);
+        $_SESSION['signup_error'] = $duplicateUsername
+            ? 'Username already exists. Please choose another username.'
+            : 'Account creation is temporarily unavailable.';
+        header('Location: sign-up.php');
+        exit();
+    }
+    $newUserId = (int) $conn->insert_id;
+    $insertStmt->close();
+    if (
+        !createNotification($conn, $newUserId, 'welcome', 'Welcome to DCI Vault', 'Your account is ready. Happy shopping!', 'cstmr-prod.php') ||
+        !notifyActiveAdmins(
+            $conn,
+            'new_signup',
+            'New customer signed up',
+            $userName . ' created a customer account.',
+            'admin-users.php?highlight-user=' . $newUserId
+        ) ||
+        !$conn->commit()
+    ) {
+        $conn->rollback();
+        deleteVerificationIdUpload($idDocumentFilename);
+        error_log('Customer account registration could not save its notifications.');
+        $_SESSION['signup_error'] = 'Account creation is temporarily unavailable.';
+        header('Location: sign-up.php');
+        exit();
+    }
+    header('Location: login.php');
+    exit();
 }
 
 /// ---------------------------------------------------------------------
 // LOG-IN LOGIC
 // ---------------------------------------------------------------------
 if (isset($_POST['logIn'])) {
-    $userName = trim($_POST['uName'] ?? '');
-    $pWord    = $_POST['pWord'] ?? '';
-
-    $loginStmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-    if ($loginStmt === false) {
-        die("LOGIN Prepare Error: " . $conn->error);
+    $userName = $postString('uName');
+    $pWord = isset($_POST['pWord']) && is_string($_POST['pWord']) ? $_POST['pWord'] : '';
+    if ($userName === '' || strlen($userName) > 50 || $pWord === '' || strlen($pWord) > 72) {
+        header('Location: login.php?error=invalid');
+        exit();
     }
 
-    $loginStmt->bind_param("s", $userName);
-    $loginStmt->execute();
-    $result = $loginStmt->get_result();
+    $loginStmt = $conn->prepare('SELECT user_id, username, password, position, is_active FROM users WHERE username = ?');
+    if ($loginStmt === false) {
+        error_log('Customer login query prepare failed: ' . $conn->error);
+        header('Location: login.php?error=unavailable');
+        exit();
+    }
 
-    $row = $result->fetch_assoc();
+    $loginStmt->bind_param('s', $userName);
+    if (!$loginStmt->execute()) {
+        error_log('Customer login query failed: ' . $loginStmt->error);
+        $loginStmt->close();
+        header('Location: login.php?error=unavailable');
+        exit();
+    }
+    $row = $loginStmt->get_result()->fetch_assoc();
     $loginStmt->close();
 
     if ($row && password_verify($pWord, $row['password'])) {
+        if ((int) ($row['position'] ?? 0) === 2) {
+            header("Location: login.php?error=admin_login_required");
+            exit();
+        }
+        if ((int) $row['position'] !== 1 || (int) $row['is_active'] !== 1) {
+            header("Location: login.php?error=invalid");
+            exit();
+        }
+
         session_regenerate_id(true);
         $_SESSION = [];
         $_SESSION['user_id'] = $row['user_id'];
         $_SESSION['username'] = $row['username'];
-        $_SESSION['position'] = $row['position'] ?? null;
+        $_SESSION['position'] = 1;
 
         session_write_close();
-        header(($row['position'] ?? null) == 2
-            ? "Location: admin-users.html"
-            : "Location: cstmr-prod.php");
+        header("Location: cstmr-prod.php");
         exit();
     }
 

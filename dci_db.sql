@@ -56,15 +56,11 @@ CREATE TABLE `users` (
   `province` varchar(100) NOT NULL,
   `postal` varchar(10) NOT NULL,
   `position` int(11) NOT NULL DEFAULT '1',
-  `avatar` varchar(255) DEFAULT NULL
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `avatar` varchar(255) DEFAULT NULL,
+  `verification_status` enum('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
+  `id_document` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`user_id`, `first_name`, `middle_name`, `last_name`, `username`, `password`, `contact_no`, `street`, `barangay`, `city`, `province`, `postal`, `position`, `avatar`) VALUES
-(1, 'Lyra Janelle', 'Pilapil', 'Oleta', 'luraloo@123', '$2y$10$7aQYxsgVglIawKN6IDx2lOwDmjosg.RFdxTAPGPF7JG3reVOYJnVO', '09658323208', 'Blk 2, Lt 22', 'San Cristobal', 'Calamba', 'Laguna', '4027', 1, 'assets/user.jpg');
 
 --
 -- Indexes for dumped tables
@@ -130,7 +126,7 @@ CREATE TABLE IF NOT EXISTS `product_images` (
   `view_label` varchar(40) NOT NULL DEFAULT 'Front',
   `sort_order` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`image_id`),
-  UNIQUE KEY `uq_product_image_path` (`product_id`,`image_url`),
+  UNIQUE KEY `uq_product_image_path` (`product_id`,`image_url`(190)),
   KEY `idx_product_images_product` (`product_id`),
   CONSTRAINT `fk_product_images_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -191,12 +187,36 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   CONSTRAINT `fk_order_items_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`variant_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `notification_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `recipient_user_id` int(11) NOT NULL,
+  `notification_type` varchar(40) NOT NULL,
+  `title` varchar(150) NOT NULL,
+  `message` varchar(500) NOT NULL,
+  `target_url` varchar(255) NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`notification_id`),
+  KEY `idx_notifications_recipient_read_date` (`recipient_user_id`,`is_read`,`created_at`),
+  CONSTRAINT `fk_notifications_recipient` FOREIGN KEY (`recipient_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `product_size_stock_alerts` (
+  `product_id` int(11) NOT NULL,
+  `size` varchar(20) NOT NULL,
+  `is_low_stock` tinyint(1) NOT NULL DEFAULT 0,
+  `last_stock` int(11) NOT NULL DEFAULT 0,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_id`,`size`),
+  CONSTRAINT `fk_stock_alert_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Seed the categories used by the existing customer product filters.
 INSERT IGNORE INTO `categories` (`name`,`slug`) VALUES
-  ('T-Shirt','tshirt'),
+  ('Tops','tshirt'),
   ('Bottom','bottom'),
   ('Outerwear','outerwear'),
-  ('Accessory','accessory');
+  ('Accessories','accessory');
 
 -- Sample catalog data based on product image folders in /assets.
 INSERT IGNORE INTO `products` (`product_id`,`category_id`,`name`,`description`,`price`,`sku`) VALUES
@@ -224,13 +244,6 @@ INSERT IGNORE INTO `product_variants` (`product_id`,`size`,`color`,`stock_quanti
   (2,'S','Black',6),(2,'M','Black',10),(2,'L','Black',8),(2,'XL','Black',5),
   (3,'M','Gray',7),(3,'L','Gray',9),(3,'XL','Gray',4),
   (4,'One Size','Default',25);
-
--- Example order uses the existing demo user (user_id 1) from the users seed.
-INSERT IGNORE INTO `orders` (`order_id`,`order_number`,`user_id`,`status`,`payment_method`,`payment_status`,`subtotal`,`vat_amount`,`shipping_fee`,`total_amount`,`shipping_name`,`shipping_contact`,`shipping_address`,`placed_at`) VALUES
-  (1,'ORD-2026-001',1,'Completed','gcash','Paid',500.00,53.58,30.00,530.00,'Lyra Janelle Oleta','09658323208','Blk 2, Lt 22, San Cristobal, Calamba, Laguna 4027','2026-10-26 09:30:00');
-
-INSERT IGNORE INTO `order_items` (`order_item_id`,`order_id`,`product_id`,`variant_id`,`product_name`,`size`,`color`,`unit_price`,`quantity`,`line_total`) VALUES
-  (1,1,1,2,'CodeBreaker T-Shirt','M','Black',250.00,2,500.00);
 
 COMMIT;
 

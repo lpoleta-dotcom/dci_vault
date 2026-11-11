@@ -1,12 +1,11 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
+$redirect = (int) ($_SESSION['position'] ?? 0) === 2 ? 'admin-login.php' : 'login.php';
 $_SESSION = [];
 
 if (ini_get('session.use_cookies')) {
@@ -23,5 +22,5 @@ if (ini_get('session.use_cookies')) {
 }
 
 session_destroy();
-header('Location: login.php');
+header('Location: ' . $redirect);
 exit();

@@ -12,7 +12,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="style/style.css?v=dark-all-5">
+    <link rel="stylesheet" href="style/style.css?v=customer-nav-3">
+    <meta name="csrf-token" content="<?php echo $customerEscape($customerCsrfToken); ?>">
     <script>
         (function () {
             try {
@@ -25,15 +26,20 @@
 </head>
 
 <!-- Russian Nesting Doll Layout -->
-<body class="customer-page customer-orders-page vh-100 overflow-hidden d-flex flex-column bg-light">
+<body class="customer-page customer-orders-page vh-100 overflow-hidden d-flex flex-column bg-light"
+    data-customer-id="<?php echo (int) $userId; ?>">
 
     <!-- HEADER CONTAINER WITH INTEGRATED NAVIGATION -->
     <header class="main-header d-flex flex-row align-items-center justify-content-between flex-shrink-0 px-4 py-2 gap-3 bg-white border-bottom">
         
         <!-- Brand Logo / Title -->
         <div class="main-name d-flex align-items-center gap-2">
-            <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
-            <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <img src="assets/logo.png" alt="DCI Vault" class="brand-logo">
+            </a>
+            <a class="text-decoration-none" href="cstmr-prod.php">
+                <span class="fw-bold fs-5 text-dark">DCI Vault</span>
+            </a>
         </div>
 
         <!-- Top Navigation Links (Aligned to DCI Tech Blue Palette) -->
@@ -52,21 +58,21 @@
             </a>
         </nav>
 
-        <!-- Customer Profile / Account Section & Logout -->
-        <div class="d-flex align-items-center gap-3">
-            <div class="user-profile d-flex align-items-center gap-2">
-                <div class="d-flex flex-column text-end lh-sm">
-                    <a id="userName" data-session-managed="true" class="mb-0 fs-6 fw-bold text-decoration-none text-dark" href="cstmr-account.php"><?php echo $customerEscape($customerHeaderUsername); ?></a>
-                    <small id="userStatus" class="text-secondary">Active Shopper</small>
-                </div>
-                <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="User Avatar" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
-            </div>
+        <?php $notificationRole = 'customer'; require __DIR__ . DIRECTORY_SEPARATOR . 'notification-widget.php'; ?>
 
-            <!-- Logout Button Icon / Link -->
-            <a id="logoutBtn" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 px-2 py-1" href="logout.php" title="Log Out">
-                <i class="bi bi-box-arrow-right fs-6"></i>
-                <span class="d-none d-lg-inline">Log Out</span>
-            </a>
+        <div class="customer-header-actions d-flex align-items-center gap-2">
+            <div class="dropdown">
+                <button class="customer-profile-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open profile menu">
+                    <img id="empAvatar" data-session-managed="true" src="<?php echo $customerEscape($customerAvatarUrl); ?>" alt="" class="user-avatar rounded-circle object-fit-cover" width="40" height="40">
+                    <span id="userName" data-session-managed="true" class="customer-profile-name"><?php echo $customerEscape($customerHeaderUsername); ?></span>
+                    <i class="bi bi-chevron-down customer-profile-chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end customer-profile-menu">
+                    <li><a class="dropdown-item" href="cstmr-account.php"><i class="bi bi-person me-2" aria-hidden="true"></i>View Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a id="logoutBtn" class="dropdown-item customer-logout-item" href="logout.php"><i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Log Out</a></li>
+                </ul>
+            </div>
         </div>
     </header>
 
@@ -98,66 +104,15 @@
                         <button class="nav-link btn-sm px-3 py-1 text-dark" id="completed-tab" data-bs-toggle="pill"
                             type="button">Completed</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link btn-sm px-3 py-1 text-dark" id="cancelled-tab" data-bs-toggle="pill"
+                            type="button">Cancelled</button>
+                    </li>
                 </ul>
             </div>
 
             <!-- Customer Orders List Container -->
             <div class="d-flex flex-column gap-3" id="orderListContainer">
-                <?php 
-                /* 
-                  PHP INJECTION EXAMPLE:
-                  foreach ($customerOrders as $order) {
-                      // Render card dynamically for each order
-                  }
-                */ 
-                ?>
-
-                <!-- Order Card 1: Processing Status -->
-                <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: var(--prod-rd, 0.75rem);">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom pb-3 mb-3 gap-2">
-                        <div>
-                            <span class="fw-bold text-dark">Order #ORD-2026-001</span>
-                            <span class="text-muted small ms-2">Placed on Oct 26, 2026</span>
-                        </div>
-                        <!-- Status Badge -->
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 align-self-start align-self-sm-center rounded-pill">Processing</span>
-                    </div>
-
-                    <!-- Item Preview Inside Order -->
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <img src="assets/product.jpg" alt="Product" class="rounded object-fit-cover shadow-sm"
-                            style="width: 65px; height: 65px;">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0 fw-semibold text-dark">Classic T-Shirt</h6>
-                            <small class="text-muted">Size: M | Qty: 2</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="fw-bold text-dark">P500.00</span>
-                        </div>
-                    </div>
-
-                    <!-- Card Footer: Total & Actions -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-3 border-top gap-3">
-                        <div>
-                            <small class="text-secondary">Payment Method: <span class="fw-semibold text-dark">GCash</span></small>
-                            <div class="h6 fw-bold mb-0 mt-1" style="color: var(--contrast-primary, #2563EB);">Total Amount: P530.00</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="view-order-btn btn text-white btn-sm px-3 shadow-sm fw-semibold" 
-                                style="background-color: var(--primary-color, #0F172A);"
-                                data-order-id="1"
-                                data-order-date="Oct 26, 2026"
-                                data-order-status="Processing"
-                                data-order-payment="GCash"
-                                data-order-subtotal="P500.00"
-                                data-order-vat="P53.58"
-                                data-order-shipping="P30.00"
-                                data-order-total="P530.00">
-                                View Details
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
@@ -209,14 +164,6 @@
                                 </tr>
                             </thead>
                             <tbody id="modalItemsTableBody">
-                                <!-- Dynamically injected via JS or PHP -->
-                                <tr>
-                                    <td class="fw-semibold text-dark">Classic T-Shirt</td>
-                                    <td>M</td>
-                                    <td>P250.00</td>
-                                    <td>2</td>
-                                    <td class="text-end fw-semibold text-dark">P500.00</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -255,10 +202,32 @@
         </div>
     </div>
 
+    <!-- Cancel Order Confirmation Modal -->
+    <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-dark" id="cancelOrderModalLabel">Cancel this order?</h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0 text-secondary">Are you sure you want to cancel <span id="cancelOrderNumber"
+                            class="fw-semibold text-dark">this order</span>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+                    <button type="button" class="btn btn-danger" id="confirmCancelOrderBtn">Cancel Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom JavaScript file -->
-    <script src="backend/cstmr.js?v=order-max-99"></script>
+    <script src="backend/cstmr.js?v=customer-reset-state-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="backend/theme.js?v=6"></script>
+    <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 
 </html>
