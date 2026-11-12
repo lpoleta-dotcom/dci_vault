@@ -913,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (file.size > 5 * 1024 * 1024) {
                     avatarInput.value = '';
                     selectedFileLabel?.classList.add('d-none');
-                    notify('Choose an image smaller than 5 MB.');
+                    notify('Choose an image no larger than 5 MB.');
                     return;
                 }
                 if (selectedFileLabel) {
@@ -1003,6 +1003,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         const removeAvatarForm = document.getElementById('removeAvatarForm');
+        const removeAvatarModalElement = document.getElementById('removeAvatarModal');
+        const confirmRemoveAvatarButton = document.getElementById('confirmRemoveAvatarBtn');
+        let confirmedAvatarRemoval = false;
+        if (removeAvatarForm && removeAvatarModalElement && confirmRemoveAvatarButton && window.bootstrap) {
+            const removeAvatarModal = bootstrap.Modal.getOrCreateInstance(removeAvatarModalElement);
+            removeAvatarForm.addEventListener('submit', event => {
+                if (confirmedAvatarRemoval) {
+                    confirmedAvatarRemoval = false;
+                    return;
+                }
+                event.preventDefault();
+                removeAvatarModal.show();
+            });
+            confirmRemoveAvatarButton.addEventListener('click', () => {
+                confirmedAvatarRemoval = true;
+                removeAvatarForm.requestSubmit();
+            });
+        } else if (removeAvatarForm) {
+            removeAvatarForm.addEventListener('submit', event => {
+                event.preventDefault();
+                console.error('Unable to open the profile photo removal confirmation modal.');
+                notify('Unable to confirm profile photo removal. Refresh the page and try again.');
+            });
+        }
         if (removeAvatarForm && removeAvatarForm.dataset.serverManaged !== 'true') {
             document.getElementById('removeAvatarBtn')?.addEventListener('click', () => {
                 const profile = read(keys.profile) || {};
@@ -1019,9 +1043,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 notify('Profile photo removed.');
             });
         }
-        removeAvatarForm?.addEventListener('submit', event => {
-            if (!window.confirm('Remove your current profile photo?')) event.preventDefault();
-        });
         const passwordForm = document.getElementById('passwordForm');
         if (passwordForm && passwordForm.dataset.serverManaged !== 'true') {
             passwordForm.querySelectorAll('input').forEach(input => input.addEventListener('input', () => input.setCustomValidity('')));

@@ -281,7 +281,7 @@
         </div>
     </div>
 
-    <script src="backend/admin-users.js?v=admin-customer-promotion-2"></script>
+    <script src="backend/admin-users.js?v=admin-customer-promotion-3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>

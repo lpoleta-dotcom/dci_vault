@@ -60,14 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $oldStatus = $order['status'];
         $allowedTransitions = [
             'Processing' => ['Processing', 'Completed', 'Cancelled'],
-            'Cancelled' => ['Cancelled', 'Processing'],
+            'Cancelled' => ['Cancelled'],
             'Completed' => ['Completed']
         ];
         if (!in_array($status, $allowedTransitions[$oldStatus] ?? [], true)) {
             $conn->rollback();
             adminOrdersRespond(409, ['success' => false, 'message' => 'This order status cannot be changed that way.']);
         }
-        if ($oldStatus !== $status && in_array($oldStatus, ['Processing', 'Cancelled'], true)) {
+        if ($oldStatus === 'Processing' && $status === 'Cancelled') {
             $itemsStmt = $conn->prepare(
                 'SELECT oi.variant_id, SUM(oi.quantity) AS quantity, pv.product_id, pv.size, p.name AS product_name
                  FROM order_items oi
@@ -92,46 +92,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $itemsStmt->close();
 
-            if ($oldStatus === 'Processing' && $status === 'Cancelled') {
-                $restoreStmt = $conn->prepare(
-                    'UPDATE product_variants SET stock_quantity = stock_quantity + ?
-                     WHERE variant_id = ? AND stock_quantity <= 2147483647 - ?'
-                );
-                if (!$restoreStmt) throw new Exception('Unable to prepare inventory restoration.');
-                foreach ($variants as $variant) {
-                    $restoreStmt->bind_param('iii', $variant['quantity'], $variant['id'], $variant['quantity']);
-                    if (!$restoreStmt->execute() || $restoreStmt->affected_rows !== 1) {
-                        throw new Exception('Unable to safely restore cancelled order inventory.');
-                    }
+            $restoreStmt = $conn->prepare(
+                'UPDATE product_variants SET stock_quantity = stock_quantity + ?
+                 WHERE variant_id = ? AND stock_quantity <= 2147483647 - ?'
+            );
+            if (!$restoreStmt) throw new Exception('Unable to prepare inventory restoration.');
+            foreach ($variants as $variant) {
+                $restoreStmt->bind_param('iii', $variant['quantity'], $variant['id'], $variant['quantity']);
+                if (!$restoreStmt->execute() || $restoreStmt->affected_rows !== 1) {
+                    throw new Exception('Unable to safely restore cancelled order inventory.');
                 }
-                $restoreStmt->close();
-            } elseif ($oldStatus === 'Cancelled' && $status === 'Processing') {
-                $stockLookup = $conn->prepare(
-                    'SELECT pv.stock_quantity FROM product_variants pv
-                     JOIN products p ON p.product_id = pv.product_id
-                     JOIN categories c ON c.category_id = p.category_id
-                     WHERE pv.variant_id = ? AND pv.is_active = 1 AND p.is_active = 1
-                       AND c.is_active = 1 FOR UPDATE'
-                );
-                $stockUpdate = $conn->prepare('UPDATE product_variants SET stock_quantity = stock_quantity - ? WHERE variant_id = ? AND stock_quantity >= ?');
-                if (!$stockLookup || !$stockUpdate) throw new Exception('Unable to prepare order inventory reservation.');
-                foreach ($variants as $variant) {
-                    $variantId = $variant['id'];
-                    $stockLookup->bind_param('i', $variantId);
-                    if (!$stockLookup->execute()) throw new Exception('Unable to check inventory for this order.');
-                    $stockRow = $stockLookup->get_result()->fetch_assoc();
-                    if (!$stockRow || (int) $stockRow['stock_quantity'] < $variant['quantity']) {
-                        $stockLookup->close();
-                        $stockUpdate->close();
-                        $conn->rollback();
-                        adminOrdersRespond(409, ['success' => false, 'message' => 'This order cannot be reopened because one or more items are inactive or out of stock.']);
-                    }
-                    $stockUpdate->bind_param('iii', $variant['quantity'], $variantId, $variant['quantity']);
-                    if (!$stockUpdate->execute() || $stockUpdate->affected_rows !== 1) throw new Exception('Unable to reserve inventory for this order.');
-                }
-                $stockLookup->close();
-                $stockUpdate->close();
             }
+            $restoreStmt->close();
 
             $stockKeys = [];
             $stockLookup = $conn->prepare(

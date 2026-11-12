@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     result = JSON.parse(responseBody);
                 } catch {
                     const message = response.status === 413
-                        ? 'Product images must be no larger than 15 MB combined.'
+                        ? 'Product images must be no larger than 5 MB each (15 MB combined).'
                         : 'The server could not process the product request. Reduce the image sizes and try again.';
                     throw new Error(message);
                 }
@@ -708,7 +708,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td class="text-end pe-4"><div class="d-flex justify-content-end gap-2">
                     <button class="btn btn-sm btn-outline-dark view-order-details-btn px-3 fw-semibold" data-customer-name="${escapeHtml(order.customer_name)}" data-customer-contact="${escapeHtml(order.shipping_contact)}" data-subtotal="${escapeHtml(order.subtotal)}" data-vat="${escapeHtml(order.vat_amount)}" data-shipping="${escapeHtml(order.shipping_fee)}" data-total="${escapeHtml(order.total_amount)}" data-items="${escapeHtml(JSON.stringify(items))}"><i class="bi bi-eye"></i> View</button>
                     <div class="dropdown"><button class="btn btn-sm btn-outline-primary dropdown-toggle fw-semibold px-3" type="button" data-bs-toggle="dropdown">Update</button>
-                        <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item update-status-btn" href="#" data-status="Processing">Mark Processing</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Completed">Mark Completed</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Cancelled">Cancel order</a></li></ul></div>
+                        <ul class="dropdown-menu dropdown-menu-end">${order.status === 'Cancelled' ? '' : '<li><a class="dropdown-item update-status-btn" href="#" data-status="Processing">Mark Processing</a></li>'}<li><a class="dropdown-item update-status-btn" href="#" data-status="Completed">Mark Completed</a></li><li><a class="dropdown-item update-status-btn" href="#" data-status="Cancelled">Cancel order</a></li></ul></div>
                 </div></td>`;
             return row;
         };

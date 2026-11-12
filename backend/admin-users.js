@@ -293,7 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ) {
             if (!promotionModal) return;
             pendingPromotionUserId = editingUserId;
-            promotionModal.show();
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                promotionModal.show();
+            }, { once: true });
+            modal.hide();
             return;
         }
         confirmedPromotionUserId = null;

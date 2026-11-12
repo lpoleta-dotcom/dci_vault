@@ -3,6 +3,20 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'customer-session-init.php';
 
 require_once 'connect.php';
 
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0])) === 'multipart/form-data' &&
+    !$_POST &&
+    !$_FILES &&
+    isset($_SERVER['CONTENT_LENGTH']) &&
+    ctype_digit($_SERVER['CONTENT_LENGTH']) &&
+    (int) $_SERVER['CONTENT_LENGTH'] > 0
+) {
+    $_SESSION['signup_error'] = 'The ID photo exceeds the upload limit. Choose an image no larger than 5 MB.';
+    header('Location: sign-up.php');
+    exit();
+}
+
 if (isset($_POST['signUp']) || isset($_POST['logIn'])) {
     $submittedToken = $_POST['auth_csrf_token'] ?? '';
     if (
