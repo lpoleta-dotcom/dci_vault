@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3307
--- Generation Time: Nov 11, 2026 at 02:22 PM
+-- Generation Time: Nov 12, 2026 at 10:54 PM
 -- Server version: 10.1.31-MariaDB
 -- PHP Version: 7.2.4
 
@@ -70,15 +70,41 @@ CREATE TABLE `notifications` (
 INSERT INTO `notifications` (`notification_id`, `recipient_user_id`, `notification_type`, `title`, `message`, `target_url`, `is_read`, `created_at`) VALUES
 (1, 2, 'welcome', 'Welcome to DCI Vault', 'Your account is ready. Happy shopping!', 'cstmr-prod.php', 1, '2026-11-11 07:44:33'),
 (2, 1, 'new_signup', 'New customer signed up', 'aaron_it created a customer account.', 'admin-users.php?highlight-user=2', 1, '2026-11-11 07:44:33'),
-(3, 2, 'order_placed', 'Order placed: ORD-20261111132550-021970', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=1', 0, '2026-11-11 12:25:50'),
-(4, 1, 'new_order', 'New order received', 'ORD-20261111132550-021970 from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=1', 0, '2026-11-11 12:25:50'),
-(5, 2, 'order_status', 'Order status updated', 'Your order ORD-20261111132550-021970 is now Completed.', 'cstmr-order.php?highlight-order=1', 0, '2026-11-11 12:26:13'),
-(6, 2, 'order_placed', 'Order placed: ORD-20261111132745-A11DAF', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=2', 0, '2026-11-11 12:27:45'),
-(7, 1, 'new_order', 'New order received', 'ORD-20261111132745-A11DAF from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=2', 0, '2026-11-11 12:27:45'),
-(8, 1, 'order_status', 'Customer cancelled an order', 'A customer cancelled order ORD-20261111132745-A11DAF.', 'admin-order.php?highlight-order=2', 0, '2026-11-11 12:27:52'),
-(9, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size S.', 'admin-prod.php?highlight-product=9&highlight-size=S', 0, '2026-11-11 12:35:39'),
-(10, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size L.', 'admin-prod.php?highlight-product=9&highlight-size=L', 0, '2026-11-11 12:35:39'),
-(11, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size XL.', 'admin-prod.php?highlight-product=9&highlight-size=XL', 0, '2026-11-11 12:35:39');
+(3, 2, 'order_placed', 'Order placed: ORD-20261111132550-021970', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=1', 1, '2026-11-11 12:25:50'),
+(4, 1, 'new_order', 'New order received', 'ORD-20261111132550-021970 from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=1', 1, '2026-11-11 12:25:50'),
+(5, 2, 'order_status', 'Order status updated', 'Your order ORD-20261111132550-021970 is now Completed.', 'cstmr-order.php?highlight-order=1', 1, '2026-11-11 12:26:13'),
+(6, 2, 'order_placed', 'Order placed: ORD-20261111132745-A11DAF', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=2', 1, '2026-11-11 12:27:45'),
+(7, 1, 'new_order', 'New order received', 'ORD-20261111132745-A11DAF from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=2', 1, '2026-11-11 12:27:45'),
+(8, 1, 'order_status', 'Customer cancelled an order', 'A customer cancelled order ORD-20261111132745-A11DAF.', 'admin-order.php?highlight-order=2', 1, '2026-11-11 12:27:52'),
+(9, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size S.', 'admin-prod.php?highlight-product=9&highlight-size=S', 1, '2026-11-11 12:35:39'),
+(10, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size L.', 'admin-prod.php?highlight-product=9&highlight-size=L', 1, '2026-11-11 12:35:39'),
+(11, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size XL.', 'admin-prod.php?highlight-product=9&highlight-size=XL', 1, '2026-11-11 12:35:39'),
+(12, 2, 'order_status', 'Order status updated', 'Your order ORD-20261111132745-A11DAF is now Processing.', 'cstmr-order.php?highlight-order=2', 1, '2026-11-12 00:13:25'),
+(13, 2, 'order_status', 'Order status updated', 'Your order ORD-20261111132745-A11DAF is now Cancelled.', 'cstmr-order.php?highlight-order=2', 1, '2026-11-12 00:13:32'),
+(14, 2, 'order_status', 'Order status updated', 'Your order ORD-20261111132745-A11DAF is now Processing.', 'cstmr-order.php?highlight-order=2', 1, '2026-11-12 00:13:34'),
+(15, 2, 'order_status', 'Order status updated', 'Your order ORD-20261111132745-A11DAF is now Completed.', 'cstmr-order.php?highlight-order=2', 1, '2026-11-12 00:13:35'),
+(16, 2, 'order_placed', 'Order placed: ORD-20261112043631-6F3D56', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=3', 1, '2026-11-12 03:36:31'),
+(17, 1, 'new_order', 'New order received', 'ORD-20261112043631-6F3D56 from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=3', 1, '2026-11-12 03:36:31'),
+(18, 2, 'order_placed', 'Order placed: ORD-20261112043726-C55AFE', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=4', 1, '2026-11-12 03:37:26'),
+(19, 1, 'new_order', 'New order received', 'ORD-20261112043726-C55AFE from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=4', 1, '2026-11-12 03:37:26'),
+(20, 2, 'order_placed', 'Order placed: ORD-20261112044006-FC7452', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=5', 1, '2026-11-12 03:40:06'),
+(21, 1, 'new_order', 'New order received', 'ORD-20261112044006-FC7452 from Aaron Edriel Espina Dalago â€” â‚±479.00.', 'admin-order.php?highlight-order=5', 1, '2026-11-12 03:40:06'),
+(22, 1, 'order_status', 'Customer cancelled an order', 'A customer cancelled order ORD-20261112044006-FC7452.', 'admin-order.php?highlight-order=5', 1, '2026-11-12 03:40:11'),
+(23, 2, 'order_status', 'Order status updated', 'Your order ORD-20261112043726-C55AFE is now Completed.', 'cstmr-order.php?highlight-order=4', 1, '2026-11-12 03:49:47'),
+(24, 1, 'low_stock', 'Low stock: CodeBreaker T-Shirt', 'Only 0 unit(s) remain in size S.', 'admin-prod.php?highlight-product=1&highlight-size=S', 1, '2026-11-12 03:55:00'),
+(25, 2, 'order_status', 'Order status updated', 'Your order ORD-20261112043631-6F3D56 is now Completed.', 'cstmr-order.php?highlight-order=3', 1, '2026-11-12 04:15:05'),
+(26, 2, 'order_placed', 'Order placed: ORD-20261112051644-E743FD', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=6', 1, '2026-11-12 04:16:44'),
+(27, 1, 'new_order', 'New order received', 'ORD-20261112051644-E743FD from Aaron Espina Dalago â€” â‚±529.00.', 'admin-order.php?highlight-order=6', 1, '2026-11-12 04:16:44'),
+(28, 2, 'order_status', 'Order status updated', 'Your order ORD-20261112051644-E743FD is now Completed.', 'cstmr-order.php?highlight-order=6', 1, '2026-11-12 04:18:17'),
+(29, 4, 'welcome', 'Welcome to DCI Vault', 'Your account is ready. Happy shopping!', 'cstmr-prod.php', 0, '2026-11-12 05:42:27'),
+(30, 1, 'new_signup', 'New customer signed up', 'kayne123@ created a customer account.', 'admin-users.php?highlight-user=4', 0, '2026-11-12 05:42:27'),
+(31, 4, 'order_placed', 'Order placed: ORD-20261112064507-0793C8', 'Your order is now processing. Weâ€™ll keep you updated.', 'cstmr-order.php?highlight-order=7', 0, '2026-11-12 05:45:07'),
+(32, 1, 'new_order', 'New order received', 'ORD-20261112064507-0793C8 from kayne1234 mingo@ â€” â‚±13,051.00.', 'admin-order.php?highlight-order=7', 0, '2026-11-12 05:45:07'),
+(33, 1, 'low_stock', 'Low stock: CodeBreaker T-Shirt', 'Only 0 unit(s) remain in size M.', 'admin-prod.php?highlight-product=1&highlight-size=M', 0, '2026-11-12 05:45:07'),
+(34, 1, 'low_stock', 'Low stock: CodeBreaker T-Shirt', 'Only 0 unit(s) remain in size L.', 'admin-prod.php?highlight-product=1&highlight-size=L', 1, '2026-11-12 05:45:07'),
+(35, 4, 'order_status', 'Order status updated', 'Your order ORD-20261112064507-0793C8 is now Cancelled.', 'cstmr-order.php?highlight-order=7', 1, '2026-11-12 05:48:42'),
+(36, 1, 'low_stock', 'Low stock: Cloud Sentinel T-Shirt', 'Only 0 unit(s) remain in size M.', 'admin-prod.php?highlight-product=9&highlight-size=M', 0, '2026-11-12 05:55:17'),
+(37, 1, 'low_stock', 'Low stock: Meow', 'Only 0 unit(s) remain in size XS.', 'admin-prod.php?highlight-product=7296&highlight-size=XS', 0, '2026-11-12 16:54:47');
 
 -- --------------------------------------------------------
 
@@ -110,7 +136,12 @@ CREATE TABLE `orders` (
 
 INSERT INTO `orders` (`order_id`, `order_number`, `user_id`, `status`, `payment_method`, `payment_status`, `subtotal`, `vat_amount`, `shipping_fee`, `total_amount`, `shipping_name`, `shipping_contact`, `shipping_address`, `placed_at`, `updated_at`) VALUES
 (1, 'ORD-20261111132550-021970', 2, 'Completed', 'gcash', 'Paid', '449.00', '48.11', '30.00', '479.00', 'Aaron Edriel Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-11 12:25:50', '2026-11-11 12:26:13'),
-(2, 'ORD-20261111132745-A11DAF', 2, 'Cancelled', 'gcash', 'Pending', '449.00', '48.11', '30.00', '479.00', 'Aaron Edriel Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-11 12:27:45', '2026-11-11 12:27:52');
+(2, 'ORD-20261111132745-A11DAF', 2, 'Completed', 'gcash', 'Paid', '449.00', '48.11', '30.00', '479.00', 'Aaron Edriel Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-11 12:27:45', '2026-11-12 00:13:35'),
+(3, 'ORD-20261112043631-6F3D56', 2, 'Completed', 'gcash', 'Paid', '449.00', '48.11', '30.00', '479.00', 'Aaron Edriel Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-12 03:36:31', '2026-11-12 04:15:05'),
+(4, 'ORD-20261112043726-C55AFE', 2, 'Completed', 'gcash', 'Paid', '449.00', '48.11', '30.00', '479.00', 'Aaron Edriel Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-12 03:37:26', '2026-11-12 03:49:47'),
+(5, 'ORD-20261112044006-FC7452', 2, 'Cancelled', 'gcash', 'Pending', '449.00', '48.11', '30.00', '479.00', 'Aaron Edriel Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-12 03:40:06', '2026-11-12 03:40:11'),
+(6, 'ORD-20261112051644-E743FD', 2, 'Completed', 'card', 'Paid', '499.00', '53.46', '30.00', '529.00', 'Aaron Espina Dalago', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba, La Mesa, Calamba, Laguna, 4027', '2026-11-12 04:16:44', '2026-11-12 04:18:17'),
+(7, 'ORD-20261112064507-0793C8', 4, 'Cancelled', 'gcash', 'Pending', '13021.00', '1395.19', '30.00', '13051.00', 'kayne1234 mingo@', '12456789745852', 'fghjk, fghjk, ghjk, fghjk, dfghj', '2026-11-12 05:45:07', '2026-11-12 05:48:42');
 
 -- --------------------------------------------------------
 
@@ -137,7 +168,13 @@ CREATE TABLE `order_items` (
 
 INSERT INTO `order_items` (`order_item_id`, `order_id`, `product_id`, `variant_id`, `product_name`, `size`, `color`, `unit_price`, `quantity`, `line_total`) VALUES
 (1, 1, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 1, '449.00'),
-(2, 2, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 1, '449.00');
+(2, 2, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 1, '449.00'),
+(3, 3, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 1, '449.00'),
+(4, 4, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 1, '449.00'),
+(5, 5, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 1, '449.00'),
+(6, 6, 9, 26, 'Cloud Sentinel T-Shirt', 'M', 'Default', '499.00', 1, '499.00'),
+(7, 7, 1, 2, 'CodeBreaker T-Shirt', 'M', 'Black', '449.00', 18, '8082.00'),
+(8, 7, 1, 3, 'CodeBreaker T-Shirt', 'L', 'Black', '449.00', 11, '4939.00');
 
 -- --------------------------------------------------------
 
@@ -166,7 +203,7 @@ INSERT INTO `products` (`product_id`, `category_id`, `name`, `description`, `pri
 (2, 2, 'AlgoArk Bottoms', 'Vintage indigo A-line denim skirt featuring subtle runic details and a minimalist Viking ship engraving.', '925.00', 'DCI-BT-ALGOARK', 1, '2026-11-10 09:13:56', '2026-11-11 07:52:09'),
 (3, 3, 'AlgoWeave Hoodie', 'Fresh ice-blue colorway detailing recursive code loops - for those running complex threads daily.', '550.00', 'DCI-OW-ALGOWEAVE', 1, '2026-11-10 09:13:56', '2026-11-11 08:07:32'),
 (4, 4, 'AlgoRhythm Accessory', 'Handcrafted adjustable woven bracelet with a subtle binary pattern braid. Designed for tech enthusiasts and students who want a minimalist everyday accessory to complement their casual campus outfit.', '149.00', 'DCI-AC-ALGORHYTHM', 1, '2026-11-10 09:13:56', '2026-11-11 08:12:42'),
-(9, 1, 'Cloud Sentinel T-Shirt', 'Elevate your street outfit with this sky-forged warrior tee crafted for maximum comfort in a modern relaxed fit.', '499.00', 'DCI-TS-CLOUDSENTINEL', 1, '2026-11-10 09:14:47', '2026-11-11 08:15:05'),
+(9, 1, 'Cloud Sentinel T-Shirt', 'Elevate your street outfit with this sky-forged warrior tee crafted for maximum comfort in a modern relaxed fit.', '499.00', 'DCI-TS-CLOUDSENTINEL', 1, '2026-11-10 09:14:47', '2026-11-12 03:58:29'),
 (11, 1, 'Code Weaver T-Shirt', 'Embrace the ultimate dev aesthetic with this comfortable oversized shirt showcasing detailed algorithmic back-art.', '529.00', 'DCI-TS-CODEWEAVER', 1, '2026-11-10 09:14:47', '2026-11-11 08:15:05'),
 (12, 1, 'Crypto Key T-Shirt', 'Add a mysterious cryptographic edge to your wardrobe with this relaxed-fit tee featuring a detailed key and lock design.', '479.00', 'DCI-TS-CRYPTOKEY', 1, '2026-11-10 09:14:47', '2026-11-11 08:15:05'),
 (13, 1, 'Data Forge T-Shirt', 'Forged for style and comfort, this oversized graphic tee highlights an epic mythological forge graphic printed on premium fabric.', '529.00', 'DCI-TS-DATAFORGE', 1, '2026-11-10 09:14:47', '2026-11-11 08:15:05'),
@@ -202,7 +239,9 @@ INSERT INTO `products` (`product_id`, `category_id`, `name`, `description`, `pri
 (46, 4, 'Runtime Stainless Ring Accessory', 'Smooth-finish silver stainless steel spinner ring with engraved tech-inspired geometric lines. Designed to relieve anxiety and help with focus during high-pressure exam seasons.', '179.00', 'DCI-AC-RUNTIMESTAINLESSRING', 1, '2026-11-10 09:14:48', '2026-11-11 08:12:42'),
 (47, 4, 'Silver Chain Accessory', 'Premium stainless steel curb chain with a custom circular pendant featuring a sleek gear/circuit motif. Rust-proof, hypoallergenic, and ideal for layering with any outfit.', '249.00', 'DCI-AC-SILVERCHAIN', 1, '2026-11-10 09:14:48', '2026-11-11 08:12:42'),
 (48, 4, 'Syntax Bag Accessory', 'Heavy-duty canvas tote bag printed with stylized course-inspired graphics and quotes. Features a spacious main compartment with a laptop sleeve and a quick-access front pocket for small essentials.', '299.00', 'DCI-AC-SYNTAXBAG', 1, '2026-11-10 09:14:48', '2026-11-11 08:12:42'),
-(49, 4, 'Terminal Lanyard Accessory', 'High-density polyester lanyard with a quick-release buckle and transparent waterproof ID badge holder. Printed with department colors and custom typography.', '129.00', 'DCI-AC-TERMINALLANYARD', 1, '2026-11-10 09:14:48', '2026-11-11 08:12:42');
+(49, 4, 'Terminal Lanyard Accessory', 'High-density polyester lanyard with a quick-release buckle and transparent waterproof ID badge holder. Printed with department colors and custom typography.', '129.00', 'DCI-AC-TERMINALLANYARD', 1, '2026-11-10 09:14:48', '2026-11-11 08:12:42'),
+(7115, 1, 'Cloud Sentinel T-Shirts', 'Elevate your street outfit with this sky-forged warrior tee crafted for maximum comfort in a modern relaxed fit.', '499.00', 'DCI-TS-2667B18FFA5E', 0, '2026-11-12 05:54:42', '2026-11-12 05:56:59'),
+(7296, 4, 'Meow', 'meow meow', '34.00', 'DCI-AC-38D6882FCA57', 1, '2026-11-12 16:54:47', '2026-11-12 16:54:47');
 
 -- --------------------------------------------------------
 
@@ -223,9 +262,6 @@ CREATE TABLE `product_images` (
 --
 
 INSERT INTO `product_images` (`image_id`, `product_id`, `image_url`, `view_label`, `sort_order`) VALUES
-(1, 1, 'assets/tshirt/CodeBreaker/CodeBreaker_Front.jpg', 'Front', 1),
-(2, 1, 'assets/tshirt/CodeBreaker/CodeBreaker_Back.jpg', 'Back', 2),
-(3, 1, 'assets/tshirt/CodeBreaker/CodeBreaker_Side.jpg', 'Side', 3),
 (4, 2, 'assets/bottom/AlgoArk/AlgoArk_Front.jpg', 'Front', 1),
 (5, 2, 'assets/bottom/AlgoArk/AlgoArk_Back.jpg', 'Back', 2),
 (6, 2, 'assets/bottom/AlgoArk/AlgoArk_Side.jpg', 'Side', 3),
@@ -340,9 +376,18 @@ INSERT INTO `product_images` (`image_id`, `product_id`, `image_url`, `view_label
 (142, 49, 'assets/accessory/TerminalLanyard/TerminalLanyard_Front.jpg', 'Front', 1),
 (143, 49, 'assets/accessory/TerminalLanyard/TerminalLanyard_Zoom.jpg', 'Detail', 2),
 (144, 49, 'assets/accessory/TerminalLanyard/TerminalLanyard_ZoomOut.jpg', 'Detail', 3),
-(39091, 9, 'assets/tshirt/CloudSentinel/CloudSentinel_Front.jpg', 'Front', 1),
-(39092, 9, 'assets/tshirt/CloudSentinel/CloudSentinel_3-4.jpg', 'Side', 2),
-(39093, 9, 'assets/tshirt/CloudSentinel/CloudSentinel_Back.jpg', 'Back', 3);
+(45304, 1, 'assets/tshirt/CodeBreaker/CodeBreaker_Front.jpg', 'Front', 1),
+(45305, 1, 'assets/tshirt/CodeBreaker/CodeBreaker_Side.jpg', 'Side', 2),
+(45306, 1, 'assets/tshirt/CodeBreaker/CodeBreaker_Back.jpg', 'Back', 3),
+(59827, 7115, 'uploads/products/c4f5e29766dbbe413218cc2e2453a397.jpg', 'Front', 1),
+(59828, 7115, 'uploads/products/89ccf073c9dbbaf56aea4c23d7a28ab1.jpg', 'Side', 2),
+(59829, 7115, 'uploads/products/50fbdba348da4d4d358aee68226c0faa.jpg', 'Back', 3),
+(60094, 9, 'assets/tshirt/CloudSentinel/CloudSentinel_Front.jpg', 'Front', 1),
+(60095, 9, 'assets/tshirt/CloudSentinel/CloudSentinel_3-4.jpg', 'Side', 2),
+(60096, 9, 'assets/tshirt/CloudSentinel/CloudSentinel_Back.jpg', 'Back', 3),
+(60625, 7296, 'uploads/products/d839a47f1775eae384eaee4ee3dafd8f.jpg', 'Front', 1),
+(60626, 7296, 'uploads/products/a924bd603f3495c5c54e7b815fa956bc.jpg', 'Side', 2),
+(60627, 7296, 'uploads/products/c5af0a9d88d0f964c62a0011a6da5776.jpg', 'Back', 3);
 
 -- --------------------------------------------------------
 
@@ -363,11 +408,19 @@ CREATE TABLE `product_size_stock_alerts` (
 --
 
 INSERT INTO `product_size_stock_alerts` (`product_id`, `size`, `is_low_stock`, `last_stock`, `updated_at`) VALUES
-(1, 'L', 0, 14, '2026-11-11 12:27:52'),
-(9, 'L', 1, 0, '2026-11-11 12:35:39'),
-(9, 'M', 0, 10, '2026-11-11 12:35:39'),
-(9, 'S', 1, 0, '2026-11-11 12:35:39'),
-(9, 'XL', 1, 0, '2026-11-11 12:35:39');
+(1, 'L', 0, 11, '2026-11-12 05:48:42'),
+(1, 'M', 0, 18, '2026-11-12 05:48:42'),
+(1, 'S', 1, 1, '2026-11-12 03:55:29'),
+(1, 'XL', 0, 8, '2026-11-12 03:55:00'),
+(9, 'L', 0, 134, '2026-11-12 03:52:56'),
+(9, 'M', 1, 0, '2026-11-12 05:55:17'),
+(9, 'S', 0, 36, '2026-11-12 03:52:56'),
+(9, 'XL', 0, 36, '2026-11-12 03:52:56'),
+(7115, 'L', 0, 134, '2026-11-12 05:54:42'),
+(7115, 'M', 0, 9, '2026-11-12 05:54:42'),
+(7115, 'S', 0, 36, '2026-11-12 05:54:42'),
+(7115, 'XL', 0, 36, '2026-11-12 05:54:42'),
+(7296, 'XS', 1, 0, '2026-11-12 16:54:47');
 
 -- --------------------------------------------------------
 
@@ -389,9 +442,9 @@ CREATE TABLE `product_variants` (
 --
 
 INSERT INTO `product_variants` (`variant_id`, `product_id`, `size`, `color`, `stock_quantity`, `is_active`) VALUES
-(1, 1, 'S', 'Black', 9, 1),
+(1, 1, 'S', 'Black', 1, 1),
 (2, 1, 'M', 'Black', 18, 1),
-(3, 1, 'L', 'Black', 14, 1),
+(3, 1, 'L', 'Black', 11, 1),
 (4, 1, 'XL', 'Black', 8, 1),
 (5, 2, 'S', 'Black', 6, 1),
 (6, 2, 'M', 'Black', 10, 1),
@@ -401,14 +454,14 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `size`, `color`, `st
 (10, 3, 'L', 'Gray', 9, 1),
 (11, 3, 'XL', 'Gray', 4, 1),
 (12, 4, 'One Size', 'Default', 25, 1),
-(25, 9, 'S', 'Default', 0, 1),
-(26, 9, 'M', 'Default', 10, 1),
-(27, 9, 'L', 'Default', 0, 1),
-(28, 9, 'XL', 'Default', 0, 1),
-(29, 1, 'S', 'Default', 0, 1),
-(30, 1, 'M', 'Default', 0, 1),
-(31, 1, 'L', 'Default', 0, 1),
-(32, 1, 'XL', 'Default', 0, 1),
+(25, 9, 'S', 'Default', 36, 1),
+(26, 9, 'M', 'Default', 0, 1),
+(27, 9, 'L', 'Default', 134, 1),
+(28, 9, 'XL', 'Default', 36, 1),
+(29, 1, 'S', 'Default', 0, 0),
+(30, 1, 'M', 'Default', 0, 0),
+(31, 1, 'L', 'Default', 0, 0),
+(32, 1, 'XL', 'Default', 0, 0),
 (33, 11, 'S', 'Default', 0, 1),
 (34, 11, 'M', 'Default', 0, 1),
 (35, 11, 'L', 'Default', 0, 1),
@@ -533,7 +586,12 @@ INSERT INTO `product_variants` (`variant_id`, `product_id`, `size`, `color`, `st
 (155, 46, 'One Size', 'Default', 0, 1),
 (156, 47, 'One Size', 'Default', 0, 1),
 (157, 48, 'One Size', 'Default', 0, 1),
-(158, 49, 'One Size', 'Default', 0, 1);
+(158, 49, 'One Size', 'Default', 0, 1),
+(23081, 7115, 'S', 'Default', 36, 1),
+(23082, 7115, 'M', 'Default', 9, 1),
+(23083, 7115, 'L', 'Default', 134, 1),
+(23084, 7115, 'XL', 'Default', 36, 1),
+(23669, 7296, 'XS', 'Default', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -567,7 +625,9 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `first_name`, `middle_name`, `last_name`, `username`, `password`, `contact_no`, `street`, `barangay`, `city`, `province`, `postal`, `position`, `is_active`, `verification_status`, `id_document`, `avatar`) VALUES
 (1, 'Lyra Janelle', 'Pilapil', 'Oleta', 'LyraOleta@Admin', '$2y$10$QucM5fABfxcTPpGQuDkps.lCH2aN4wYkHwwoqbaDsSw84Vy/3wgTS', '09658323208', 'Blk 2, Lt 22, Garden Homes', 'San Cristobal', 'Calamba', 'Laguna', '4027', 2, 1, 'Pending', NULL, NULL),
-(2, 'Aaron Edriel', 'Espina', 'Dalago', 'aaron_it', '$2y$10$SYc9RCbWzd4xS9kahSyuduI1RgucxGh/P4TcpSXZYSMpGuQKn2kK2', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba', 'La Mesa', 'Calamba', 'Laguna', '4027', 1, 1, 'Pending', '7513b987cdb08c9773af1c9e77783739642992d483338690.png', NULL);
+(2, 'Aaron', 'Espina', 'Dalago', 'aaron_it', '$2y$10$SYc9RCbWzd4xS9kahSyuduI1RgucxGh/P4TcpSXZYSMpGuQKn2kK2', '09675978682', 'Blk 36, Lot 24, Phase 2, Villa De Calamba', 'La Mesa', 'Calamba', 'Laguna', '4027', 1, 1, 'Pending', '7513b987cdb08c9773af1c9e77783739642992d483338690.png', NULL),
+(3, 'Alejandro', 'Arsolacia', 'Albay', 'drew_commits', '$2y$10$gqiUPZgzPUziC0YwnXhEiuvoB2FwJKBFFY.9Ikm0Zl6JkQYBtak8O', '09934328772', 'Purok 3, Hibiscus St.', 'Canlubang', 'Calamba', 'Laguna', '4027', 1, 1, 'Pending', NULL, NULL),
+(4, 'kayne1234', '', 'mingo@', 'kayne123@', '$2y$10$lmPGmkWA5J3F8DwA2XECQeaz119fWPMVkYO0wAOzx0uvxrMDWr5Ny', '12456789745852', 'fghjk', 'fghjk', 'ghjk', 'fghjk', 'dfghj', 1, 1, 'Pending', '6c28b22fffa333e82c4f18e5c820ec3b0b85a5ece041813e.jpg', NULL);
 
 --
 -- Indexes for dumped tables
@@ -650,49 +710,49 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=537;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `notification_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `order_item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14406;
+  MODIFY `product_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7297;
 
 --
 -- AUTO_INCREMENT for table `product_images`
 --
 ALTER TABLE `product_images`
-  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43318;
+  MODIFY `image_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60628;
 
 --
 -- AUTO_INCREMENT for table `product_variants`
 --
 ALTER TABLE `product_variants`
-  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46735;
+  MODIFY `variant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23670;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
