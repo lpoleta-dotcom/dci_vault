@@ -45,6 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contentType = strtolower(trim(explode(';', $_SERVER['CONTENT_TYPE'] ?? '')[0]));
     $contentLength = $_SERVER['CONTENT_LENGTH'] ?? '';
     if (
+        $contentType === 'multipart/form-data' &&
+        !$_POST &&
+        !$_FILES &&
+        $contentLength !== '' &&
+        ctype_digit($contentLength) &&
+        (int) $contentLength > 0
+    ) {
+        $accountError = 'The image exceeds the upload limit. Choose an image no larger than 5 MB.';
+    } elseif (
         !is_string($submittedToken) ||
         !hash_equals($csrfToken, $submittedToken) ||
         empty($_SERVER['HTTP_ORIGIN']) ||
@@ -57,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ($contentLength !== '' && (!ctype_digit($contentLength) || (int) $contentLength > 6291456))
     ) {
         http_response_code(400);
-        $accountError = 'The account update request is invalid or too large.';
+        $accountError = $contentType === 'multipart/form-data'
+            ? 'The image exceeds the upload limit. Choose an image no larger than 5 MB.'
+            : 'The account update request is invalid or too large.';
     } elseif (!isset($_POST['account_action']) || !is_string($_POST['account_action'])) {
         http_response_code(400);
         $accountError = 'Choose a valid account action.';
@@ -227,12 +238,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (
                 !is_array($upload) ||
                 !isset($upload['error'], $upload['tmp_name'], $upload['size']) ||
-                !is_string($upload['tmp_name']) ||
+                !is_string($upload['tmp_name'])
+            ) {
+                $accountError = 'Select a valid profile photo to upload.';
+            } elseif (
+                $upload['error'] === UPLOAD_ERR_INI_SIZE ||
+                $upload['error'] === UPLOAD_ERR_FORM_SIZE ||
+                $upload['size'] > 5 * 1024 * 1024
+            ) {
+                $accountError = 'Choose an image no larger than 5 MB.';
+            } elseif (
                 $upload['error'] !== UPLOAD_ERR_OK ||
                 !is_uploaded_file($upload['tmp_name'])
             ) {
-                $accountError = 'Select a valid profile photo to upload.';
-            } elseif ($upload['size'] <= 0 || $upload['size'] > 5 * 1024 * 1024) {
+                $accountError = 'The profile photo could not be uploaded. Choose it again and retry.';
+            } elseif ($upload['size'] <= 0) {
                 $accountError = 'Choose an image no larger than 5 MB.';
             } else {
                 $imageInfo = @getimagesize($upload['tmp_name']);
@@ -708,10 +728,28 @@ $escape = function ($value) {
         </div>
     </div>
 
+    <div class="modal fade" id="removeAvatarModal" tabindex="-1" aria-labelledby="removeAvatarTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <section class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold" id="removeAvatarTitle">Remove profile photo?</h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    Are you sure you want to remove your current profile photo?
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmRemoveAvatarBtn">Remove photo</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
     <!-- Custom JavaScript file -->
     <script src="backend/app.js?v=password-visibility-1"></script>
-    <script src="backend/cstmr.js?v=customer-reset-state-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="backend/cstmr.js?v=customer-reset-state-2"></script>
     <script src="backend/theme.js?v=theme-header-order-2"></script>
 </body>
 

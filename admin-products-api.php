@@ -91,6 +91,9 @@ $contentLength = $_SERVER['CONTENT_LENGTH'] ?? '';
 if ($contentLength !== '' && (!ctype_digit($contentLength) || (int) $contentLength > 16777216)) {
     adminProductsRespond(413, ['success' => false, 'message' => 'Product images must be no larger than 15 MB combined.']);
 }
+if ($contentLength !== '' && ctype_digit($contentLength) && (int) $contentLength > 0 && !$_POST && !$_FILES) {
+    adminProductsRespond(413, ['success' => false, 'message' => 'Product images must be no larger than 5 MB each (15 MB combined).']);
+}
 $expectedOrigin = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http')
     . '://' . ($_SERVER['HTTP_HOST'] ?? '');
 if (
@@ -307,10 +310,17 @@ $uploadDirectory = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARAT
 foreach ($fileFields as $label => $field) {
     if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) continue;
     $file = $_FILES[$field];
+    if (
+        $file['error'] === UPLOAD_ERR_INI_SIZE ||
+        $file['error'] === UPLOAD_ERR_FORM_SIZE ||
+        $file['size'] > 5 * 1024 * 1024
+    ) {
+        adminProductsRespond(400, ['success' => false, 'message' => 'Product images must be no larger than 5 MB each.']);
+    }
     if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
         adminProductsRespond(400, ['success' => false, 'message' => 'One of the product images could not be uploaded.']);
     }
-    if ($file['size'] <= 0 || $file['size'] > 5 * 1024 * 1024) {
+    if ($file['size'] <= 0) {
         adminProductsRespond(400, ['success' => false, 'message' => 'Product images must be no larger than 5 MB.']);
     }
     $imageInfo = @getimagesize($file['tmp_name']);
